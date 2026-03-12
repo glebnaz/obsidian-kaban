@@ -42,15 +42,15 @@ Build a custom Obsidian plugin that renders kanban boards from code blocks embed
 - [x] Mark completed
 
 ### Task 4: Board rendering (columns and cards)
-- [ ] Build `renderBoard(el, columns, cards, config)`: create horizontal flex container with column divs
-- [ ] Render column headers with column name and card count badge
-- [ ] Render card elements inside each column with: checkbox, title, project path, due date (with color coding: red=overdue, orange=today, default=future), priority indicator, tags list
-- [ ] Style cards and columns using CSS variables from Obsidian theme (--background-primary, --background-secondary, --text-accent, etc.)
-- [ ] Handle empty columns gracefully (show placeholder text)
-- [ ] Handle `hide-fields` config — conditionally skip rendering specified fields
-- [ ] Handle `show-done: false` — filter out done cards from render
-- [ ] Add tests
-- [ ] Mark completed
+- [x] Build `renderBoard(el, columns, cards, config)`: create horizontal flex container with column divs
+- [x] Render column headers with column name and card count badge
+- [x] Render card elements inside each column with: checkbox, title, project path, due date (with color coding: red=overdue, orange=today, default=future), priority indicator, tags list
+- [x] Style cards and columns using CSS variables from Obsidian theme (--background-primary, --background-secondary, --text-accent, etc.)
+- [x] Handle empty columns gracefully (show placeholder text)
+- [x] Handle `hide-fields` config — conditionally skip rendering specified fields
+- [x] Handle `show-done: false` — filter out done cards from render
+- [x] Add tests
+- [x] Mark completed
 
 ### Task 5: Drag-and-drop with SortableJS
 - [ ] Initialize SortableJS on each column container with shared `group` name scoped to board instance

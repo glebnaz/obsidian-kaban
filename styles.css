@@ -55,6 +55,16 @@
   border-color: var(--text-accent);
 }
 
+.kanban-card-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.kanban-card-header input[type="checkbox"] {
+  margin: 0;
+}
+
 .kanban-card-title {
   font-weight: 500;
   cursor: pointer;

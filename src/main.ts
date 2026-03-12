@@ -1,6 +1,7 @@
 import { Plugin, MarkdownRenderChild } from "obsidian";
 import { parseKanbanConfig } from "./config";
 import { getDataviewApi, loadBoard, subscribeToMetadataChange } from "./dataview";
+import { renderBoard } from "./rendering";
 
 const TEMPLATE_BLOCK = `\`\`\`kanban
 source: Tasks
@@ -42,15 +43,11 @@ export default class KanbanBoardPlugin extends Plugin {
 
       const { columns, v2Message } = loadBoard(api, config);
 
-      const board = el.createEl("div", { cls: "kanban-board" });
-
       if (v2Message) {
-        board.createEl("div", { cls: "kanban-error", text: v2Message });
+        el.createEl("div", { cls: "kanban-error", text: v2Message });
       }
 
-      board.createEl("div", {
-        text: `Board configured: ${columns.length} columns, grouped by "${config.groupBy}"`,
-      });
+      renderBoard(el, columns, config);
 
       const child = new MarkdownRenderChild(el);
       ctx.addChild(child);
@@ -58,13 +55,10 @@ export default class KanbanBoardPlugin extends Plugin {
       subscribeToMetadataChange(this.app, child, () => {
         const { columns: newColumns, v2Message: newV2 } = loadBoard(api, config);
         el.empty();
-        const newBoard = el.createEl("div", { cls: "kanban-board" });
         if (newV2) {
-          newBoard.createEl("div", { cls: "kanban-error", text: newV2 });
+          el.createEl("div", { cls: "kanban-error", text: newV2 });
         }
-        newBoard.createEl("div", {
-          text: `Board configured: ${newColumns.length} columns, grouped by "${config.groupBy}"`,
-        });
+        renderBoard(el, newColumns, config);
       });
     });
 

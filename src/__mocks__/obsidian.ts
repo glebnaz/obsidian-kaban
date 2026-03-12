@@ -3,10 +3,12 @@ function createMockEl(): any {
     children: [] as any[],
     cls: "",
     text: "",
+    dataset: {} as Record<string, string>,
     createEl(_tag: string, opts?: any) {
       const child = createMockEl();
       if (opts?.cls) child.cls = opts.cls;
       if (opts?.text) child.text = opts.text;
+      if (opts?.type) child.type = opts.type;
       el.children.push(child);
       return child;
     },

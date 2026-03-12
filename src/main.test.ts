@@ -13,7 +13,12 @@ jest.mock("./dataview", () => ({
   subscribeToMetadataChange: jest.fn(),
 }));
 
+jest.mock("./rendering", () => ({
+  renderBoard: jest.fn(),
+}));
+
 const { getDataviewApi, loadBoard, subscribeToMetadataChange } = require("./dataview");
+const { renderBoard } = require("./rendering");
 
 describe("KanbanBoardPlugin", () => {
   it("should be a class that extends Plugin", () => {
@@ -78,7 +83,7 @@ describe("KanbanBoardPlugin", () => {
       expect(errorDiv.children[0].text).toContain("Dataview plugin is required");
     });
 
-    it("should render board div when api is available", () => {
+    it("should render board when api is available", () => {
       getDataviewApi.mockReturnValue({ pages: jest.fn() });
       const source = [
         "source: Tasks",
@@ -89,9 +94,8 @@ describe("KanbanBoardPlugin", () => {
       const el = createMockEl();
       const ctx = { addChild: jest.fn() };
       handler(source, el, ctx);
-      const board = el.children[0];
-      expect(board.cls).toBe("kanban-board");
       expect(loadBoard).toHaveBeenCalled();
+      expect(renderBoard).toHaveBeenCalled();
       expect(subscribeToMetadataChange).toHaveBeenCalled();
       expect(ctx.addChild).toHaveBeenCalled();
     });
@@ -114,10 +118,10 @@ describe("KanbanBoardPlugin", () => {
       const el = createMockEl();
       const ctx = { addChild: jest.fn() };
       handler(source, el, ctx);
-      const board = el.children[0];
-      expect(board.cls).toBe("kanban-board");
-      expect(board.children[0].cls).toBe("kanban-error");
-      expect(board.children[0].text).toContain("v2");
+      const errorEl = el.children[0];
+      expect(errorEl.cls).toBe("kanban-error");
+      expect(errorEl.text).toContain("v2");
+      expect(renderBoard).toHaveBeenCalled();
     });
   });
 
