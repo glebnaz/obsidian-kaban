@@ -21,13 +21,13 @@ Build a custom Obsidian plugin that renders kanban boards from code blocks embed
 - [x] Mark completed
 
 ### Task 2: Code block parser and config model
-- [ ] Register `registerMarkdownCodeBlockProcessor("kanban", handler)` in main.ts
-- [ ] Define TypeScript interfaces: `KanbanConfig` (source, query, sourceType, columns, groupBy, sortBy, filterTags, hideFields, showDone)
-- [ ] Write YAML parser for code block content — parse each line as key:value, handle comma-separated lists for columns/filterTags/hideFields
-- [ ] Add validation: require `source`, `query`, `columns`, `group-by`; provide clear error messages rendered in the code block container when config is invalid
-- [ ] Register Cmd+P command "Kanban: Insert Board" that inserts a template code block at cursor position
-- [ ] Add tests
-- [ ] Mark completed
+- [x] Register `registerMarkdownCodeBlockProcessor("kanban", handler)` in main.ts
+- [x] Define TypeScript interfaces: `KanbanConfig` (source, query, sourceType, columns, groupBy, sortBy, filterTags, hideFields, showDone)
+- [x] Write YAML parser for code block content — parse each line as key:value, handle comma-separated lists for columns/filterTags/hideFields
+- [x] Add validation: require `source`, `query`, `columns`, `group-by`; provide clear error messages rendered in the code block container when config is invalid
+- [x] Register Cmd+P command "Kanban: Insert Board" that inserts a template code block at cursor position
+- [x] Add tests
+- [x] Mark completed
 
 ### Task 3: Dataview integration and data fetching
 - [ ] Check Dataview plugin availability via `getAPI(app)`, render friendly error if not installed

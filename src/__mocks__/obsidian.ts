@@ -1,3 +1,19 @@
+function createMockEl(): any {
+  const el: any = {
+    children: [] as any[],
+    cls: "",
+    text: "",
+    createEl(_tag: string, opts?: any) {
+      const child = createMockEl();
+      if (opts?.cls) child.cls = opts.cls;
+      if (opts?.text) child.text = opts.text;
+      el.children.push(child);
+      return child;
+    },
+  };
+  return el;
+}
+
 export class Plugin {
   app: any = {};
   manifest: any = {};
@@ -27,3 +43,5 @@ export class TFile {
   basename = "";
   extension = "";
 }
+
+export { createMockEl };
