@@ -64,12 +64,12 @@ Build a custom Obsidian plugin that renders kanban boards from code blocks embed
 - [x] Mark completed
 
 ### Task 6: Card actions (click to open, checkbox toggle)
-- [ ] Implement click on card title: `app.workspace.getLeaf('tab')` then `leaf.openFile(file)` — open in new tab
-- [ ] Implement checkbox click on card: toggle `- [ ]` to `- [x]` via `app.vault.process()` for checkboxes, or set `status: done` via `processFrontMatter` for file-tasks
-- [ ] Prevent click events from firing during drag (check SortableJS drag state)
-- [ ] Add Obsidian Notice on successful status update ("Task moved to {column}")
-- [ ] Add tests
-- [ ] Mark completed
+- [x] Implement click on card title: `app.workspace.getLeaf('tab')` then `leaf.openFile(file)` — open in new tab
+- [x] Implement checkbox click on card: toggle `- [ ]` to `- [x]` via `app.vault.process()` for checkboxes, or set `status: done` via `processFrontMatter` for file-tasks
+- [x] Prevent click events from firing during drag (check SortableJS drag state)
+- [x] Add Obsidian Notice on successful status update ("Task moved to {column}")
+- [x] Add tests
+- [x] Mark completed
 
 ### Task 7: Polish, edge cases, and release prep
 - [ ] Handle multiple kanban boards in same note (unique group IDs per board instance)

@@ -2,7 +2,8 @@ import { Plugin, MarkdownRenderChild } from "obsidian";
 import { parseKanbanConfig } from "./config";
 import { getDataviewApi, loadBoard, subscribeToMetadataChange } from "./dataview";
 import { renderBoard } from "./rendering";
-import { initSortableOnColumns, destroySortables, generateBoardId, DragDropContext } from "./dragdrop";
+import { initSortableOnColumns, destroySortables, generateBoardId, DragDropContext, DragState } from "./dragdrop";
+import { initCardActions, CardActionContext } from "./cardactions";
 import Sortable from "sortablejs";
 
 const TEMPLATE_BLOCK = `\`\`\`kanban
@@ -52,8 +53,16 @@ export default class KanbanBoardPlugin extends Plugin {
       renderBoard(el, columns, config);
 
       const boardId = generateBoardId();
-      const dragContext: DragDropContext = { app: this.app, config, boardId };
+      const dragState: DragState = { isDragging: false };
+      const dragContext: DragDropContext = { app: this.app, config, boardId, dragState };
       let sortables: Sortable[] = initSortableOnColumns(el, dragContext);
+
+      const cardActionContext: CardActionContext = {
+        app: this.app,
+        config,
+        isDragging: () => dragState.isDragging,
+      };
+      initCardActions(el, cardActionContext);
 
       const child = new MarkdownRenderChild(el);
       ctx.addChild(child);
@@ -76,6 +85,7 @@ export default class KanbanBoardPlugin extends Plugin {
         }
         renderBoard(el, newColumns, config);
         sortables = initSortableOnColumns(el, dragContext);
+        initCardActions(el, cardActionContext);
       });
     });
 

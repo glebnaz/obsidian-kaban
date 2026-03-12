@@ -23,6 +23,10 @@ jest.mock("./dragdrop", () => ({
   generateBoardId: jest.fn().mockReturnValue("test-board-1"),
 }));
 
+jest.mock("./cardactions", () => ({
+  initCardActions: jest.fn(),
+}));
+
 jest.mock("sortablejs", () => ({
   __esModule: true,
   default: { create: jest.fn() },

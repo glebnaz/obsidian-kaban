@@ -6,10 +6,15 @@ export interface DragDropCallbacks {
   onStatusUpdate: (filePath: string, groupByField: string, newStatus: string, cardType: "file" | "checkbox") => Promise<void>;
 }
 
+export interface DragState {
+  isDragging: boolean;
+}
+
 export interface DragDropContext {
   app: App;
   config: KanbanConfig;
   boardId: string;
+  dragState: DragState;
 }
 
 let boardCounter = 0;
@@ -35,6 +40,12 @@ export function initSortableOnColumns(
       ghostClass: "kanban-card-ghost",
       chosenClass: "kanban-card-chosen",
       dragClass: "kanban-card-drag",
+      onStart: () => {
+        context.dragState.isDragging = true;
+      },
+      onEnd: () => {
+        context.dragState.isDragging = false;
+      },
       onAdd: async (evt) => {
         const cardEl = evt.item as HTMLElement;
         const targetColumnEl = (evt.to as HTMLElement).closest(".kanban-column") as HTMLElement | null;
