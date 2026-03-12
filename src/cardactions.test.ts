@@ -1,8 +1,10 @@
 import { openFile, toggleCardDone, initCardActions, CardActionContext } from "./cardactions";
+import { TFile } from "./__mocks__/obsidian";
 
 jest.mock("obsidian", () => {
   return {
     Notice: jest.fn(),
+    TFile: class TFile { path = ""; basename = ""; extension = ""; },
   };
 });
 
@@ -40,7 +42,7 @@ describe("openFile", () => {
 describe("toggleCardDone", () => {
   it("should toggle file task status to Done", async () => {
     const capturedFm: any = { status: "Backlog" };
-    const mockFile = { path: "Tasks/todo.md" };
+    const mockFile = Object.assign(new TFile(), { path: "Tasks/todo.md" });
     const processFrontMatter = jest.fn().mockImplementation((_file, cb) => {
       cb(capturedFm);
       return Promise.resolve();
@@ -57,7 +59,7 @@ describe("toggleCardDone", () => {
 
   it("should toggle file task status from Done back to Backlog", async () => {
     const capturedFm: any = { status: "Done" };
-    const mockFile = { path: "Tasks/todo.md" };
+    const mockFile = Object.assign(new TFile(), { path: "Tasks/todo.md" });
     const processFrontMatter = jest.fn().mockImplementation((_file, cb) => {
       cb(capturedFm);
       return Promise.resolve();
@@ -72,15 +74,23 @@ describe("toggleCardDone", () => {
     expect(capturedFm.status).toBe("Backlog");
   });
 
-  it("should throw error for checkbox card type", async () => {
+  it("should toggle checkbox task", async () => {
+    const mockFile = Object.assign(new TFile(), { path: "tasks.md" });
+    let processedContent = "";
     const app: any = {
-      vault: { getAbstractFileByPath: jest.fn() },
+      vault: {
+        getAbstractFileByPath: jest.fn().mockReturnValue(mockFile),
+        process: jest.fn().mockImplementation((_file, cb) => {
+          processedContent = cb("- [ ] Do something\n- [x] Already done");
+          return Promise.resolve();
+        }),
+      },
       fileManager: { processFrontMatter: jest.fn() },
     };
 
-    await expect(
-      toggleCardDone(app, "file.md", "status", "checkbox")
-    ).rejects.toThrow("Checkbox task updates are coming in v2");
+    await toggleCardDone(app, "tasks.md", "status", "checkbox", 0);
+
+    expect(processedContent).toContain("- [x] Do something");
   });
 
   it("should throw error when file not found", async () => {
@@ -237,7 +247,7 @@ describe("initCardActions", () => {
 
   it("should show notice on successful checkbox toggle", async () => {
     Notice.mockClear();
-    const mockFile = { path: "Tasks/task-0.md" };
+    const mockFile = Object.assign(new TFile(), { path: "Tasks/task-0.md" });
     const processFrontMatter = jest.fn().mockImplementation((_file, cb) => {
       cb({ status: "Backlog" });
       return Promise.resolve();

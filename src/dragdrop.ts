@@ -1,5 +1,5 @@
 import Sortable from "sortablejs";
-import { App, Notice } from "obsidian";
+import { App, Notice, TFile } from "obsidian";
 import { KanbanConfig } from "./config";
 
 export interface DragDropCallbacks {
@@ -100,14 +100,31 @@ export async function updateTaskStatus(
   cardType: "file" | "checkbox",
   _lineNumber?: number
 ): Promise<void> {
-  if (cardType === "checkbox") {
-    // v2 stub
-    throw new Error("Checkbox task updates are coming in v2");
+  const file = app.vault.getAbstractFileByPath(filePath);
+  if (!file || !(file instanceof TFile)) {
+    throw new Error(`File not found: ${filePath}`);
   }
 
-  const file = app.vault.getAbstractFileByPath(filePath);
-  if (!file) {
-    throw new Error(`File not found: ${filePath}`);
+  if (cardType === "checkbox") {
+    if (_lineNumber == null) {
+      throw new Error("Line number required for checkbox task updates");
+    }
+    await app.vault.process(file, (content: string) => {
+      const lines = content.split("\n");
+      const idx = _lineNumber;
+      if (idx < 0 || idx >= lines.length) return content;
+      const line = lines[idx];
+      // Replace existing inline field [groupByField:: oldValue] with new value
+      const fieldRegex = new RegExp(`\\[${groupByField}::\\s*[^\\]]*\\]`, "i");
+      if (fieldRegex.test(line)) {
+        lines[idx] = line.replace(fieldRegex, `[${groupByField}:: ${newStatus}]`);
+      } else {
+        // Append inline field at end of the task line
+        lines[idx] = line.trimEnd() + ` [${groupByField}:: ${newStatus}]`;
+      }
+      return lines.join("\n");
+    });
+    return;
   }
 
   await app.fileManager.processFrontMatter(file, (fm: any) => {

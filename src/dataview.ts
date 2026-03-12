@@ -62,7 +62,9 @@ export function mapPageToCard(page: any, groupBy: string): KanbanCard {
 }
 
 export function fetchPages(api: DataviewApi, config: KanbanConfig): KanbanCard[] {
-  const result = api.pages(config.query);
+  // api.pages() expects a source expression without the FROM keyword
+  const query = config.query.replace(/^\s*FROM\s+/i, "");
+  const result = api.pages(query);
   if (!result || !result.values) return [];
 
   const cards: KanbanCard[] = [];
@@ -77,8 +79,79 @@ export function fetchPages(api: DataviewApi, config: KanbanConfig): KanbanCard[]
   return cards;
 }
 
-export function fetchTasks(_api: DataviewApi, _config: KanbanConfig): KanbanCard[] {
-  return [];
+export function mapTaskToCard(task: any, groupBy: string): KanbanCard {
+  const rawText: string = task.text ?? "";
+  // Strip inline fields like [field:: value] from the display title
+  const title = rawText.replace(/\[[\w-]+::[^\]]*\]/g, "").trim() || "Untitled";
+  const filePath: string = task.path ?? "";
+  const lineNumber: number | undefined = task.line != null ? Number(task.line) : undefined;
+
+  // Try to extract the groupBy field from inline fields in the task text
+  const inlineFieldRegex = new RegExp(`\\[${groupBy}::\\s*([^\\]]*)\\]`, "i");
+  const match = rawText.match(inlineFieldRegex);
+
+  let status: string;
+  if (match) {
+    status = match[1].trim();
+  } else {
+    // Fall back to completed status
+    status = task.completed ? "done" : "";
+  }
+
+  // Extract other inline fields
+  const priorityMatch = rawText.match(/\[priority::\s*([^\]]*)\]/i);
+  const dueMatch = rawText.match(/\[due::\s*([^\]]*)\]/i);
+  const projectMatch = rawText.match(/\[project::\s*([^\]]*)\]/i);
+  const tagsMatch = rawText.match(/\[tags::\s*([^\]]*)\]/i);
+
+  const tags: string[] = [];
+  if (tagsMatch) {
+    for (const t of tagsMatch[1].split(",")) {
+      const trimmed = t.trim();
+      if (trimmed) tags.push(trimmed);
+    }
+  }
+  // Also pick up #hashtags from the text
+  const hashtagMatches = rawText.match(/#[\w-/]+/g);
+  if (hashtagMatches) {
+    for (const ht of hashtagMatches) {
+      if (!tags.includes(ht)) tags.push(ht);
+    }
+  }
+
+  return {
+    id: `${filePath}:${lineNumber ?? 0}`,
+    title,
+    status,
+    priority: priorityMatch ? priorityMatch[1].trim() : undefined,
+    due: dueMatch ? dueMatch[1].trim() : undefined,
+    tags: tags.length > 0 ? tags : undefined,
+    project: projectMatch ? projectMatch[1].trim() : undefined,
+    filePath,
+    lineNumber,
+    cardType: "checkbox",
+  };
+}
+
+export function fetchTasks(api: DataviewApi, config: KanbanConfig): KanbanCard[] {
+  const query = config.query.replace(/^\s*FROM\s+/i, "");
+  const result = api.pages(query);
+  if (!result || !result.values) return [];
+
+  const cards: KanbanCard[] = [];
+  for (const page of result.values) {
+    const tasks = page?.file?.tasks?.values;
+    if (!tasks) continue;
+    for (const task of tasks) {
+      try {
+        cards.push(mapTaskToCard(task, config.groupBy));
+      } catch (e) {
+        const path = task?.path ?? "unknown";
+        console.warn(`Kanban: skipping task at ${path}:${task?.line}:`, e);
+      }
+    }
+  }
+  return cards;
 }
 
 export function filterByTags(cards: KanbanCard[], filterTags: string[]): KanbanCard[] {
@@ -141,15 +214,10 @@ export function groupIntoColumns(
 export function loadBoard(
   api: DataviewApi,
   config: KanbanConfig
-): { columns: KanbanColumn[]; v2Message?: string } {
-  if (config.sourceType === "tasks") {
-    return {
-      columns: config.columns.map((col) => ({ id: col, title: col, cards: [] })),
-      v2Message: "Checkbox-based tasks are coming in v2.",
-    };
-  }
-
-  const cards = fetchPages(api, config);
+): { columns: KanbanColumn[] } {
+  const cards = config.sourceType === "tasks"
+    ? fetchTasks(api, config)
+    : fetchPages(api, config);
   const columns = groupIntoColumns(cards, config);
   return { columns };
 }

@@ -115,7 +115,7 @@ describe("fetchPages", () => {
     const config = makeConfig();
     const cards = fetchPages(api, config);
 
-    expect(api.pages).toHaveBeenCalledWith('FROM "Tasks"');
+    expect(api.pages).toHaveBeenCalledWith('"Tasks"');
     expect(cards).toHaveLength(2);
     expect(cards[0].status).toBe("Backlog");
     expect(cards[1].status).toBe("Done");
@@ -135,10 +135,57 @@ describe("fetchPages", () => {
 });
 
 describe("fetchTasks", () => {
-  it("should return empty array (v2 stub)", () => {
+  it("should return empty array when no tasks exist", () => {
     const api = makeMockApi();
     const cards = fetchTasks(api, makeConfig({ sourceType: "tasks" }));
     expect(cards).toEqual([]);
+  });
+
+  it("should extract cards from checkbox tasks with inline fields", () => {
+    const pages = [
+      {
+        file: {
+          path: "Projects/notes.md",
+          tasks: {
+            values: [
+              { text: "Buy milk [status:: todo] [priority:: high]", completed: false, path: "Projects/notes.md", line: 5 },
+              { text: "Write report [status:: done]", completed: true, path: "Projects/notes.md", line: 6 },
+            ],
+          },
+        },
+      },
+    ];
+    const api = { pages: jest.fn().mockReturnValue({ values: pages }) };
+    const cards = fetchTasks(api, makeConfig({ sourceType: "tasks", query: 'FROM "Projects"' }));
+
+    expect(cards).toHaveLength(2);
+    expect(cards[0].title).toBe("Buy milk");
+    expect(cards[0].status).toBe("todo");
+    expect(cards[0].priority).toBe("high");
+    expect(cards[0].cardType).toBe("checkbox");
+    expect(cards[0].lineNumber).toBe(5);
+    expect(cards[1].status).toBe("done");
+  });
+
+  it("should fall back to completed status when no inline groupBy field", () => {
+    const pages = [
+      {
+        file: {
+          path: "tasks.md",
+          tasks: {
+            values: [
+              { text: "Simple task", completed: false, path: "tasks.md", line: 1 },
+              { text: "Done task", completed: true, path: "tasks.md", line: 2 },
+            ],
+          },
+        },
+      },
+    ];
+    const api = { pages: jest.fn().mockReturnValue({ values: pages }) };
+    const cards = fetchTasks(api, makeConfig({ sourceType: "tasks" }));
+
+    expect(cards[0].status).toBe("");
+    expect(cards[1].status).toBe("done");
   });
 });
 
@@ -312,19 +359,30 @@ describe("loadBoard", () => {
     const api = makeMockApi(pages);
     const result = loadBoard(api, makeConfig());
 
-    expect(result.v2Message).toBeUndefined();
     expect(result.columns).toHaveLength(3);
     expect(result.columns[0].cards).toHaveLength(1);
     expect(result.columns[2].cards).toHaveLength(1);
   });
 
-  it("should return v2 message for tasks source type", () => {
-    const api = makeMockApi();
+  it("should load tasks source type via fetchTasks", () => {
+    const pages = [
+      {
+        file: {
+          path: "tasks.md",
+          tasks: {
+            values: [
+              { text: "Task A [status:: Backlog]", completed: false, path: "tasks.md", line: 1 },
+            ],
+          },
+        },
+      },
+    ];
+    const api = { pages: jest.fn().mockReturnValue({ values: pages }) };
     const result = loadBoard(api, makeConfig({ sourceType: "tasks" }));
 
-    expect(result.v2Message).toBe("Checkbox-based tasks are coming in v2.");
     expect(result.columns).toHaveLength(3);
-    expect(result.columns.every((c) => c.cards.length === 0)).toBe(true);
+    expect(result.columns[0].cards).toHaveLength(1);
+    expect(result.columns[0].cards[0].cardType).toBe("checkbox");
   });
 });
 

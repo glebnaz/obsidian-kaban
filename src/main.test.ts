@@ -115,13 +115,12 @@ describe("KanbanBoardPlugin", () => {
       expect(ctx.addChild).toHaveBeenCalled();
     });
 
-    it("should show v2 message for tasks source type", () => {
+    it("should render board for tasks source type", () => {
       getDataviewApi.mockReturnValue({ pages: jest.fn() });
       loadBoard.mockReturnValue({
         columns: [
           { id: "Backlog", title: "Backlog", cards: [] },
         ],
-        v2Message: "Checkbox-based tasks are coming in v2.",
       });
       const source = [
         "source: Tasks",
@@ -133,9 +132,7 @@ describe("KanbanBoardPlugin", () => {
       const el = createMockEl();
       const ctx = { addChild: jest.fn() };
       handler(source, el, ctx);
-      const errorEl = el.children[0];
-      expect(errorEl.cls).toBe("kanban-error");
-      expect(errorEl.text).toContain("v2");
+      expect(loadBoard).toHaveBeenCalled();
       expect(renderBoard).toHaveBeenCalled();
     });
   });

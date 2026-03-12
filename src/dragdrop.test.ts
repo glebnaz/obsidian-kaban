@@ -1,5 +1,6 @@
 import { updateTaskStatus, destroySortables, generateBoardId, initSortableOnColumns, DragDropContext } from "./dragdrop";
 import { KanbanConfig } from "./config";
+import { TFile } from "./__mocks__/obsidian";
 
 // Mock sortablejs
 jest.mock("sortablejs", () => {
@@ -49,7 +50,7 @@ describe("generateBoardId", () => {
 
 describe("updateTaskStatus", () => {
   it("should call processFrontMatter for file card type", async () => {
-    const mockFile = { path: "Tasks/todo.md" };
+    const mockFile = Object.assign(new TFile(), { path: "Tasks/todo.md" });
     const processFrontMatter = jest.fn().mockImplementation((_file, cb) => {
       const fm: any = {};
       cb(fm);
@@ -71,15 +72,23 @@ describe("updateTaskStatus", () => {
     expect(processFrontMatter).toHaveBeenCalledWith(mockFile, expect.any(Function));
   });
 
-  it("should throw error for checkbox card type (v2 stub)", async () => {
+  it("should update inline field for checkbox card type", async () => {
+    const mockFile = Object.assign(new TFile(), { path: "tasks.md" });
+    let processedContent = "";
     const app: any = {
-      vault: { getAbstractFileByPath: jest.fn() },
+      vault: {
+        getAbstractFileByPath: jest.fn().mockReturnValue(mockFile),
+        process: jest.fn().mockImplementation((_file, cb) => {
+          processedContent = cb("- [ ] Buy milk [status:: todo]\n- [ ] Other task");
+          return Promise.resolve();
+        }),
+      },
       fileManager: { processFrontMatter: jest.fn() },
     };
 
-    await expect(
-      updateTaskStatus(app, "file.md", "status", "Done", "checkbox")
-    ).rejects.toThrow("Checkbox task updates are coming in v2");
+    await updateTaskStatus(app, "tasks.md", "status", "done", "checkbox", 0);
+
+    expect(processedContent).toContain("[status:: done]");
   });
 
   it("should throw error when file not found", async () => {
@@ -97,7 +106,7 @@ describe("updateTaskStatus", () => {
 
   it("should set the correct groupBy field on frontmatter", async () => {
     const capturedFm: any = { priority: "low" };
-    const mockFile = { path: "Tasks/todo.md" };
+    const mockFile = Object.assign(new TFile(), { path: "Tasks/todo.md" });
     const processFrontMatter = jest.fn().mockImplementation((_file, cb) => {
       cb(capturedFm);
       return Promise.resolve();

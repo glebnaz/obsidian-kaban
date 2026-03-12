@@ -44,12 +44,7 @@ export default class KanbanBoardPlugin extends Plugin {
         return;
       }
 
-      const { columns, v2Message } = loadBoard(api, config);
-
-      if (v2Message) {
-        el.createEl("div", { cls: "kanban-error", text: v2Message });
-      }
-
+      const { columns } = loadBoard(api, config);
       renderBoard(el, columns, config);
 
       const boardId = generateBoardId();
@@ -78,11 +73,8 @@ export default class KanbanBoardPlugin extends Plugin {
         destroySortables(sortables);
         sortables = [];
 
-        const { columns: newColumns, v2Message: newV2 } = loadBoard(api, config);
+        const { columns: newColumns } = loadBoard(api, config);
         el.empty();
-        if (newV2) {
-          el.createEl("div", { cls: "kanban-error", text: newV2 });
-        }
         renderBoard(el, newColumns, config);
         sortables = initSortableOnColumns(el, dragContext);
         initCardActions(el, cardActionContext);

@@ -1,4 +1,4 @@
-import { App, Notice } from "obsidian";
+import { App, Notice, TFile } from "obsidian";
 import { KanbanConfig } from "./config";
 
 export interface CardActionContext {
@@ -39,8 +39,9 @@ export function initCardActions(
       const cardType = cardEl.dataset.cardType as "file" | "checkbox" | undefined;
       if (!filePath || !cardType) return;
 
+      const lineNumber = cardEl.dataset.lineNumber ? parseInt(cardEl.dataset.lineNumber) : undefined;
       try {
-        await toggleCardDone(context.app, filePath, context.config.groupBy, cardType);
+        await toggleCardDone(context.app, filePath, context.config.groupBy, cardType, lineNumber);
         new Notice("Task marked as done");
       } catch (err) {
         (cbEl as HTMLInputElement).checked = !(cbEl as HTMLInputElement).checked;
@@ -64,15 +65,31 @@ export async function toggleCardDone(
   app: App,
   filePath: string,
   groupByField: string,
-  cardType: "file" | "checkbox"
+  cardType: "file" | "checkbox",
+  lineNumber?: number
 ): Promise<void> {
-  if (cardType === "checkbox") {
-    throw new Error("Checkbox task updates are coming in v2");
+  const file = app.vault.getAbstractFileByPath(filePath);
+  if (!file || !(file instanceof TFile)) {
+    throw new Error(`File not found: ${filePath}`);
   }
 
-  const file = app.vault.getAbstractFileByPath(filePath);
-  if (!file) {
-    throw new Error(`File not found: ${filePath}`);
+  if (cardType === "checkbox") {
+    if (lineNumber == null) {
+      throw new Error("Line number required for checkbox task updates");
+    }
+    await app.vault.process(file, (content: string) => {
+      const lines = content.split("\n");
+      if (lineNumber < 0 || lineNumber >= lines.length) return content;
+      const line = lines[lineNumber];
+      // Toggle checkbox: - [ ] <-> - [x]
+      if (/- \[ \]/.test(line)) {
+        lines[lineNumber] = line.replace("- [ ]", "- [x]");
+      } else if (/- \[x\]/i.test(line)) {
+        lines[lineNumber] = line.replace(/- \[x\]/i, "- [ ]");
+      }
+      return lines.join("\n");
+    });
+    return;
   }
 
   await app.fileManager.processFrontMatter(file, (fm: any) => {
