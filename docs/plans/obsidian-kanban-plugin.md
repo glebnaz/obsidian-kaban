@@ -11,14 +11,14 @@ Build a custom Obsidian plugin that renders kanban boards from code blocks embed
 - Manual test: click card title, verify file opens in new tab
 
 ### Task 1: Project scaffolding and build setup
-- [ ] Clone obsidian-sample-plugin template, rename to obsidian-kanban-board
-- [ ] Configure esbuild with SortableJS as bundled dependency and obsidian/obsidian-dataview as external
-- [ ] Set up manifest.json (id: kanban-board, name, version, minAppVersion, description)
-- [ ] Set up styles.css with empty kanban board CSS skeleton
-- [ ] Create symlink from build output to test vault .obsidian/plugins/kanban-board
-- [ ] Verify plugin loads in Obsidian (shows in Community Plugins list, can enable/disable)
-- [ ] Add tests
-- [ ] Mark completed
+- [x] Clone obsidian-sample-plugin template, rename to obsidian-kanban-board
+- [x] Configure esbuild with SortableJS as bundled dependency and obsidian/obsidian-dataview as external
+- [x] Set up manifest.json (id: kanban-board, name, version, minAppVersion, description)
+- [x] Set up styles.css with empty kanban board CSS skeleton
+- [x] Create symlink from build output to test vault .obsidian/plugins/kanban-board
+- [x] Verify plugin loads in Obsidian (shows in Community Plugins list, can enable/disable)
+- [x] Add tests
+- [x] Mark completed
 
 ### Task 2: Code block parser and config model
 - [ ] Register `registerMarkdownCodeBlockProcessor("kanban", handler)` in main.ts

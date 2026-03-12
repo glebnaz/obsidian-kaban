@@ -1,0 +1,118 @@
+/* Kanban Board Plugin - CSS Skeleton */
+
+.kanban-board {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 8px 0;
+  min-height: 200px;
+}
+
+.kanban-column {
+  flex: 0 0 280px;
+  display: flex;
+  flex-direction: column;
+  background: var(--background-secondary);
+  border-radius: 8px;
+  padding: 8px;
+  max-height: 600px;
+}
+
+.kanban-column-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 8px;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.kanban-column-count {
+  background: var(--background-modifier-hover);
+  border-radius: 12px;
+  padding: 0 8px;
+  font-size: 0.85em;
+}
+
+.kanban-column-cards {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 40px;
+}
+
+.kanban-card {
+  background: var(--background-primary);
+  border-radius: 6px;
+  padding: 8px 10px;
+  cursor: grab;
+  border: 1px solid var(--background-modifier-border);
+}
+
+.kanban-card:hover {
+  border-color: var(--text-accent);
+}
+
+.kanban-card-title {
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.kanban-card-title:hover {
+  color: var(--text-accent);
+  text-decoration: underline;
+}
+
+.kanban-card-meta {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+  font-size: 0.85em;
+  color: var(--text-muted);
+}
+
+.kanban-card-due {
+  /* Default styling for future dates */
+}
+
+.kanban-card-due.overdue {
+  color: var(--text-error);
+}
+
+.kanban-card-due.today {
+  color: var(--text-warning);
+}
+
+.kanban-card-priority {
+  font-weight: 600;
+}
+
+.kanban-card-tags {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.kanban-card-tag {
+  background: var(--background-modifier-hover);
+  border-radius: 4px;
+  padding: 0 4px;
+  font-size: 0.8em;
+}
+
+.kanban-column-empty {
+  color: var(--text-muted);
+  text-align: center;
+  padding: 16px 8px;
+  font-style: italic;
+}
+
+.kanban-error {
+  color: var(--text-error);
+  padding: 16px;
+  border: 1px solid var(--text-error);
+  border-radius: 8px;
+}
