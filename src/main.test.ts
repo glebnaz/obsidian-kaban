@@ -1,6 +1,20 @@
 import KanbanBoardPlugin from "./main";
 import { createMockEl } from "./__mocks__/obsidian";
 
+jest.mock("./dataview", () => ({
+  getDataviewApi: jest.fn(),
+  loadBoard: jest.fn().mockReturnValue({
+    columns: [
+      { id: "Backlog", title: "Backlog", cards: [] },
+      { id: "In Progress", title: "In Progress", cards: [] },
+      { id: "Done", title: "Done", cards: [] },
+    ],
+  }),
+  subscribeToMetadataChange: jest.fn(),
+}));
+
+const { getDataviewApi, loadBoard, subscribeToMetadataChange } = require("./dataview");
+
 describe("KanbanBoardPlugin", () => {
   it("should be a class that extends Plugin", () => {
     expect(KanbanBoardPlugin).toBeDefined();
@@ -29,15 +43,17 @@ describe("KanbanBoardPlugin", () => {
 
   describe("code block handler", () => {
     let handler: (source: string, el: any, ctx: any) => void;
+    let plugin: KanbanBoardPlugin;
 
     beforeEach(async () => {
-      const plugin = new KanbanBoardPlugin({} as any, {} as any);
+      plugin = new KanbanBoardPlugin({} as any, {} as any);
       jest
         .spyOn(plugin, "registerMarkdownCodeBlockProcessor")
         .mockImplementation((_lang: string, h: any) => {
           handler = h;
         });
       await plugin.onload();
+      jest.clearAllMocks();
     });
 
     it("should render error div for invalid config", () => {
@@ -47,7 +63,8 @@ describe("KanbanBoardPlugin", () => {
       expect(errorDiv.cls).toBe("kanban-error");
     });
 
-    it("should render board div for valid config", () => {
+    it("should render dataview error when api is not available", () => {
+      getDataviewApi.mockReturnValue(null);
       const source = [
         "source: Tasks",
         'query: WHERE status != "archive"',
@@ -56,8 +73,51 @@ describe("KanbanBoardPlugin", () => {
       ].join("\n");
       const el = createMockEl();
       handler(source, el, {});
+      const errorDiv = el.children[0];
+      expect(errorDiv.cls).toBe("kanban-error");
+      expect(errorDiv.children[0].text).toContain("Dataview plugin is required");
+    });
+
+    it("should render board div when api is available", () => {
+      getDataviewApi.mockReturnValue({ pages: jest.fn() });
+      const source = [
+        "source: Tasks",
+        'query: WHERE status != "archive"',
+        "columns: Backlog, In Progress, Done",
+        "group-by: status",
+      ].join("\n");
+      const el = createMockEl();
+      const ctx = { addChild: jest.fn() };
+      handler(source, el, ctx);
       const board = el.children[0];
       expect(board.cls).toBe("kanban-board");
+      expect(loadBoard).toHaveBeenCalled();
+      expect(subscribeToMetadataChange).toHaveBeenCalled();
+      expect(ctx.addChild).toHaveBeenCalled();
+    });
+
+    it("should show v2 message for tasks source type", () => {
+      getDataviewApi.mockReturnValue({ pages: jest.fn() });
+      loadBoard.mockReturnValue({
+        columns: [
+          { id: "Backlog", title: "Backlog", cards: [] },
+        ],
+        v2Message: "Checkbox-based tasks are coming in v2.",
+      });
+      const source = [
+        "source: Tasks",
+        'query: WHERE status != "archive"',
+        "source-type: tasks",
+        "columns: Backlog",
+        "group-by: status",
+      ].join("\n");
+      const el = createMockEl();
+      const ctx = { addChild: jest.fn() };
+      handler(source, el, ctx);
+      const board = el.children[0];
+      expect(board.cls).toBe("kanban-board");
+      expect(board.children[0].cls).toBe("kanban-error");
+      expect(board.children[0].text).toContain("v2");
     });
   });
 

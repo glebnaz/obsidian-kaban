@@ -30,16 +30,16 @@ Build a custom Obsidian plugin that renders kanban boards from code blocks embed
 - [x] Mark completed
 
 ### Task 3: Dataview integration and data fetching
-- [ ] Check Dataview plugin availability via `getAPI(app)`, render friendly error if not installed
-- [ ] Implement `fetchPages(config)`: call `api.pages(query)` for source-type: pages, extract status/priority/due/tags/project from frontmatter
-- [ ] Implement `fetchTasks(config)`: call `api.pages(query).file.tasks` for source-type: tasks (stub for v2, just return empty with "coming in v2" message)
-- [ ] Define unified `KanbanCard` interface: id, title, status, priority, due, tags, project, filePath, lineNumber, cardType (file/checkbox)
-- [ ] Map Dataview page results to KanbanCard array, group by `config.groupBy` field into columns
-- [ ] Apply sorting within columns based on `config.sortBy`
-- [ ] Apply tag filtering when `config.filterTags` is set
-- [ ] Subscribe to `dataview:metadata-change` event for auto-refresh — debounce re-render with 300ms delay
-- [ ] Add tests
-- [ ] Mark completed
+- [x] Check Dataview plugin availability via `getAPI(app)`, render friendly error if not installed
+- [x] Implement `fetchPages(config)`: call `api.pages(query)` for source-type: pages, extract status/priority/due/tags/project from frontmatter
+- [x] Implement `fetchTasks(config)`: call `api.pages(query).file.tasks` for source-type: tasks (stub for v2, just return empty with "coming in v2" message)
+- [x] Define unified `KanbanCard` interface: id, title, status, priority, due, tags, project, filePath, lineNumber, cardType (file/checkbox)
+- [x] Map Dataview page results to KanbanCard array, group by `config.groupBy` field into columns
+- [x] Apply sorting within columns based on `config.sortBy`
+- [x] Apply tag filtering when `config.filterTags` is set
+- [x] Subscribe to `dataview:metadata-change` event for auto-refresh — debounce re-render with 300ms delay
+- [x] Add tests
+- [x] Mark completed
 
 ### Task 4: Board rendering (columns and cards)
 - [ ] Build `renderBoard(el, columns, cards, config)`: create horizontal flex container with column divs

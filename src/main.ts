@@ -1,5 +1,6 @@
-import { Plugin } from "obsidian";
+import { Plugin, MarkdownRenderChild } from "obsidian";
 import { parseKanbanConfig } from "./config";
+import { getDataviewApi, loadBoard, subscribeToMetadataChange } from "./dataview";
 
 const TEMPLATE_BLOCK = `\`\`\`kanban
 source: Tasks
@@ -25,9 +26,45 @@ export default class KanbanBoardPlugin extends Plugin {
         return;
       }
 
+      const config = result.config;
+      const api = getDataviewApi(this.app);
+
+      if (!api) {
+        const errorDiv = el.createEl("div", { cls: "kanban-error" });
+        errorDiv.createEl("strong", {
+          text: "Dataview plugin is required but not installed or enabled.",
+        });
+        errorDiv.createEl("p", {
+          text: "Please install and enable the Dataview community plugin to use Kanban boards.",
+        });
+        return;
+      }
+
+      const { columns, v2Message } = loadBoard(api, config);
+
       const board = el.createEl("div", { cls: "kanban-board" });
+
+      if (v2Message) {
+        board.createEl("div", { cls: "kanban-error", text: v2Message });
+      }
+
       board.createEl("div", {
-        text: `Board configured: ${result.config.columns.length} columns, grouped by "${result.config.groupBy}"`,
+        text: `Board configured: ${columns.length} columns, grouped by "${config.groupBy}"`,
+      });
+
+      const child = new MarkdownRenderChild(el);
+      ctx.addChild(child);
+
+      subscribeToMetadataChange(this.app, child, () => {
+        const { columns: newColumns, v2Message: newV2 } = loadBoard(api, config);
+        el.empty();
+        const newBoard = el.createEl("div", { cls: "kanban-board" });
+        if (newV2) {
+          newBoard.createEl("div", { cls: "kanban-error", text: newV2 });
+        }
+        newBoard.createEl("div", {
+          text: `Board configured: ${newColumns.length} columns, grouped by "${config.groupBy}"`,
+        });
       });
     });
 

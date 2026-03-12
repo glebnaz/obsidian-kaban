@@ -10,11 +10,21 @@ function createMockEl(): any {
       el.children.push(child);
       return child;
     },
+    empty() {
+      el.children = [];
+    },
   };
   return el;
 }
 
-export class Plugin {
+export class Component {
+  _events: any[] = [];
+  registerEvent(event: any) {
+    this._events.push(event);
+  }
+}
+
+export class Plugin extends Component {
   app: any = {};
   manifest: any = {};
   registerMarkdownCodeBlockProcessor(_lang: string, _handler: any) {}
@@ -25,9 +35,10 @@ export class Plugin {
   async saveData(_data: any) {}
 }
 
-export class MarkdownRenderChild {
+export class MarkdownRenderChild extends Component {
   containerEl: any;
   constructor(containerEl: any) {
+    super();
     this.containerEl = containerEl;
   }
   onload() {}
@@ -43,5 +54,7 @@ export class TFile {
   basename = "";
   extension = "";
 }
+
+export type App = any;
 
 export { createMockEl };
