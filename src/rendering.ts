@@ -98,6 +98,15 @@ export function renderBoard(
   config: KanbanConfig
 ): void {
   const filtered = filterDoneCards(columns, config);
+  const totalCards = filtered.reduce((sum, col) => sum + col.cards.length, 0);
+
+  if (totalCards === 0) {
+    el.createEl("div", {
+      cls: "kanban-empty-board",
+      text: "No tasks found. Check your query or add tasks matching your columns.",
+    });
+  }
+
   const board = el.createEl("div", { cls: "kanban-board" });
 
   for (const column of filtered) {

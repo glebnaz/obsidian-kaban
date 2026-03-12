@@ -67,7 +67,12 @@ export function fetchPages(api: DataviewApi, config: KanbanConfig): KanbanCard[]
 
   const cards: KanbanCard[] = [];
   for (const page of result.values) {
-    cards.push(mapPageToCard(page, config.groupBy));
+    try {
+      cards.push(mapPageToCard(page, config.groupBy));
+    } catch (e) {
+      const path = page?.file?.path ?? "unknown";
+      console.warn(`Kanban: skipping card with malformed frontmatter at ${path}:`, e);
+    }
   }
   return cards;
 }

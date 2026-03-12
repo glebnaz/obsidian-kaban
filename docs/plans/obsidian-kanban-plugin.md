@@ -72,12 +72,12 @@ Build a custom Obsidian plugin that renders kanban boards from code blocks embed
 - [x] Mark completed
 
 ### Task 7: Polish, edge cases, and release prep
-- [ ] Handle multiple kanban boards in same note (unique group IDs per board instance)
-- [ ] Handle vault with no Dataview plugin (show install prompt)
-- [ ] Handle empty query results (show "No tasks found" message)
-- [ ] Handle malformed frontmatter (skip card, log warning)
-- [ ] Add CSS for responsive column widths, card hover states, drag ghost styling
-- [ ] Test with 50+ task files for performance
-- [ ] Write README.md with installation instructions, usage examples, and config reference
-- [ ] Add tests
-- [ ] Mark completed
+- [x] Handle multiple kanban boards in same note (unique group IDs per board instance)
+- [x] Handle vault with no Dataview plugin (show install prompt)
+- [x] Handle empty query results (show "No tasks found" message)
+- [x] Handle malformed frontmatter (skip card, log warning)
+- [x] Add CSS for responsive column widths, card hover states, drag ghost styling
+- [x] Test with 50+ task files for performance
+- [x] Write README.md with installation instructions, usage examples, and config reference
+- [x] Add tests
+- [x] Mark completed

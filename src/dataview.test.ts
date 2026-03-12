@@ -242,6 +242,70 @@ describe("groupIntoColumns", () => {
   });
 });
 
+describe("fetchPages - malformed frontmatter", () => {
+  it("should skip pages that throw during mapping and log warning", () => {
+    const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+    const badPage = {
+      file: { path: "bad.md", name: "bad" },
+      get status() {
+        throw new Error("Malformed frontmatter");
+      },
+    };
+    const goodPage = makePage({ status: "Backlog" });
+    const api = { pages: jest.fn().mockReturnValue({ values: [badPage, goodPage] }) };
+    const cards = fetchPages(api, makeConfig());
+
+    expect(cards).toHaveLength(1);
+    expect(cards[0].title).toBe("my-task");
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringContaining("Kanban: skipping card with malformed frontmatter at bad.md"),
+      expect.any(Error)
+    );
+    consoleSpy.mockRestore();
+  });
+
+  it("should return empty array when all pages are malformed", () => {
+    const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+    const badPage = {
+      file: { path: "bad.md", name: "bad" },
+      get status() {
+        throw new Error("fail");
+      },
+    };
+    const api = { pages: jest.fn().mockReturnValue({ values: [badPage] }) };
+    const cards = fetchPages(api, makeConfig());
+
+    expect(cards).toHaveLength(0);
+    expect(consoleSpy).toHaveBeenCalled();
+    consoleSpy.mockRestore();
+  });
+});
+
+describe("performance - 50+ cards", () => {
+  it("should handle 60 cards across columns without error", () => {
+    const pages = [];
+    const statuses = ["Backlog", "In Progress", "Done"];
+    for (let i = 0; i < 60; i++) {
+      pages.push(
+        makePage({
+          status: statuses[i % 3],
+          file: { path: `Tasks/task-${i}.md`, name: `task-${i}`, tags: { values: [] } },
+          priority: i % 2 === 0 ? "high" : "low",
+        })
+      );
+    }
+    const api = makeMockApi(pages);
+    const result = loadBoard(api, makeConfig({ sortBy: "priority" }));
+
+    expect(result.columns).toHaveLength(3);
+    const totalCards = result.columns.reduce((sum, col) => sum + col.cards.length, 0);
+    expect(totalCards).toBe(60);
+    expect(result.columns[0].cards.length).toBe(20);
+    expect(result.columns[1].cards.length).toBe(20);
+    expect(result.columns[2].cards.length).toBe(20);
+  });
+});
+
 describe("loadBoard", () => {
   it("should load pages and group into columns", () => {
     const pages = [makePage({ status: "Backlog" }), makePage({ status: "Done", file: { path: "d.md", name: "d" } })];

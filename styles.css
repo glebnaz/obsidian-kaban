@@ -1,4 +1,4 @@
-/* Kanban Board Plugin - CSS Skeleton */
+/* Kanban Board Plugin */
 
 .kanban-board {
   display: flex;
@@ -10,6 +10,7 @@
 
 .kanban-column {
   flex: 0 0 280px;
+  min-width: 200px;
   display: flex;
   flex-direction: column;
   background: var(--background-secondary);
@@ -49,10 +50,16 @@
   padding: 8px 10px;
   cursor: grab;
   border: 1px solid var(--background-modifier-border);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .kanban-card:hover {
   border-color: var(--text-accent);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.kanban-card:active {
+  cursor: grabbing;
 }
 
 .kanban-card-header {
@@ -63,11 +70,13 @@
 
 .kanban-card-header input[type="checkbox"] {
   margin: 0;
+  cursor: pointer;
 }
 
 .kanban-card-title {
   font-weight: 500;
   cursor: pointer;
+  transition: color 0.1s ease;
 }
 
 .kanban-card-title:hover {
@@ -120,14 +129,17 @@
   font-style: italic;
 }
 
+/* Drag-and-drop states */
 .kanban-card-ghost {
   opacity: 0.4;
   background: var(--background-modifier-hover);
   border: 2px dashed var(--text-accent);
+  border-radius: 6px;
 }
 
 .kanban-card-chosen {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: rotate(1deg);
 }
 
 .kanban-card-drag {
@@ -140,4 +152,11 @@
   padding: 16px;
   border: 1px solid var(--text-error);
   border-radius: 8px;
+}
+
+.kanban-empty-board {
+  color: var(--text-muted);
+  padding: 16px;
+  text-align: center;
+  font-style: italic;
 }

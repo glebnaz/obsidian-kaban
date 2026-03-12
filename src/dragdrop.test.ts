@@ -37,6 +37,14 @@ describe("generateBoardId", () => {
     expect(id1).toContain("kanban-board-");
     expect(id2).toContain("kanban-board-");
   });
+
+  it("should generate unique IDs for multiple boards in same note", () => {
+    const ids = new Set<string>();
+    for (let i = 0; i < 10; i++) {
+      ids.add(generateBoardId());
+    }
+    expect(ids.size).toBe(10);
+  });
 });
 
 describe("updateTaskStatus", () => {

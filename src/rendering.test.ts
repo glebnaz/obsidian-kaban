@@ -266,6 +266,31 @@ describe("renderBoard", () => {
     expect(doneEmpty).toBeDefined();
   });
 
+  it("should show empty board message when all columns have zero cards", () => {
+    const el = createMockEl();
+    const columns: KanbanColumn[] = [
+      { id: "Backlog", title: "Backlog", cards: [] },
+      { id: "Done", title: "Done", cards: [] },
+    ];
+    renderBoard(el, columns, makeConfig());
+
+    const emptyBoard = findByClassFirst(el, "kanban-empty-board");
+    expect(emptyBoard).toBeDefined();
+    expect(emptyBoard.text).toContain("No tasks found");
+  });
+
+  it("should not show empty board message when cards exist", () => {
+    const el = createMockEl();
+    const columns: KanbanColumn[] = [
+      { id: "Backlog", title: "Backlog", cards: [makeCard()] },
+      { id: "Done", title: "Done", cards: [] },
+    ];
+    renderBoard(el, columns, makeConfig());
+
+    const emptyBoard = findByClassFirst(el, "kanban-empty-board");
+    expect(emptyBoard).toBeUndefined();
+  });
+
   it("should keep done cards when showDone is true", () => {
     const el = createMockEl();
     const columns: KanbanColumn[] = [
