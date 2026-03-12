@@ -17,6 +17,17 @@ jest.mock("./rendering", () => ({
   renderBoard: jest.fn(),
 }));
 
+jest.mock("./dragdrop", () => ({
+  initSortableOnColumns: jest.fn().mockReturnValue([]),
+  destroySortables: jest.fn(),
+  generateBoardId: jest.fn().mockReturnValue("test-board-1"),
+}));
+
+jest.mock("sortablejs", () => ({
+  __esModule: true,
+  default: { create: jest.fn() },
+}));
+
 const { getDataviewApi, loadBoard, subscribeToMetadataChange } = require("./dataview");
 const { renderBoard } = require("./rendering");
 

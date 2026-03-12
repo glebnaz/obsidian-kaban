@@ -2,6 +2,8 @@ import { Plugin, MarkdownRenderChild } from "obsidian";
 import { parseKanbanConfig } from "./config";
 import { getDataviewApi, loadBoard, subscribeToMetadataChange } from "./dataview";
 import { renderBoard } from "./rendering";
+import { initSortableOnColumns, destroySortables, generateBoardId, DragDropContext } from "./dragdrop";
+import Sortable from "sortablejs";
 
 const TEMPLATE_BLOCK = `\`\`\`kanban
 source: Tasks
@@ -49,16 +51,31 @@ export default class KanbanBoardPlugin extends Plugin {
 
       renderBoard(el, columns, config);
 
+      const boardId = generateBoardId();
+      const dragContext: DragDropContext = { app: this.app, config, boardId };
+      let sortables: Sortable[] = initSortableOnColumns(el, dragContext);
+
       const child = new MarkdownRenderChild(el);
       ctx.addChild(child);
 
+      const origUnload = child.onunload.bind(child);
+      child.onunload = () => {
+        destroySortables(sortables);
+        sortables = [];
+        origUnload();
+      };
+
       subscribeToMetadataChange(this.app, child, () => {
+        destroySortables(sortables);
+        sortables = [];
+
         const { columns: newColumns, v2Message: newV2 } = loadBoard(api, config);
         el.empty();
         if (newV2) {
           el.createEl("div", { cls: "kanban-error", text: newV2 });
         }
         renderBoard(el, newColumns, config);
+        sortables = initSortableOnColumns(el, dragContext);
       });
     });
 

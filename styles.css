@@ -120,6 +120,21 @@
   font-style: italic;
 }
 
+.kanban-card-ghost {
+  opacity: 0.4;
+  background: var(--background-modifier-hover);
+  border: 2px dashed var(--text-accent);
+}
+
+.kanban-card-chosen {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.kanban-card-drag {
+  opacity: 0.9;
+  cursor: grabbing;
+}
+
 .kanban-error {
   color: var(--text-error);
   padding: 16px;

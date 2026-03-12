@@ -53,15 +53,15 @@ Build a custom Obsidian plugin that renders kanban boards from code blocks embed
 - [x] Mark completed
 
 ### Task 5: Drag-and-drop with SortableJS
-- [ ] Initialize SortableJS on each column container with shared `group` name scoped to board instance
-- [ ] Store card metadata as data attributes: `data-file-path`, `data-card-type`, `data-line-number`
-- [ ] Implement `onAdd` handler: read target column id from `evt.to.dataset.columnId`, call `updateTaskStatus()`
-- [ ] Implement `updateTaskStatus()` for file-tasks: use `app.fileManager.processFrontMatter(file, fm => fm[groupByField] = newColumnId)`
-- [ ] Implement `updateTaskStatus()` for checkboxes (v2 stub): use `app.vault.process()` to replace inline field or tag in source line
-- [ ] Handle edge case: if processFrontMatter fails (file deleted, locked), revert card position and show notice
-- [ ] Ensure SortableJS instances are destroyed on code block re-render (cleanup in MarkdownRenderChild.onunload)
-- [ ] Add tests
-- [ ] Mark completed
+- [x] Initialize SortableJS on each column container with shared `group` name scoped to board instance
+- [x] Store card metadata as data attributes: `data-file-path`, `data-card-type`, `data-line-number`
+- [x] Implement `onAdd` handler: read target column id from `evt.to.dataset.columnId`, call `updateTaskStatus()`
+- [x] Implement `updateTaskStatus()` for file-tasks: use `app.fileManager.processFrontMatter(file, fm => fm[groupByField] = newColumnId)`
+- [x] Implement `updateTaskStatus()` for checkboxes (v2 stub): use `app.vault.process()` to replace inline field or tag in source line
+- [x] Handle edge case: if processFrontMatter fails (file deleted, locked), revert card position and show notice
+- [x] Ensure SortableJS instances are destroyed on code block re-render (cleanup in MarkdownRenderChild.onunload)
+- [x] Add tests
+- [x] Mark completed
 
 ### Task 6: Card actions (click to open, checkbox toggle)
 - [ ] Implement click on card title: `app.workspace.getLeaf('tab')` then `leaf.openFile(file)` — open in new tab
