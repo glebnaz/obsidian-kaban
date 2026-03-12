@@ -150,7 +150,7 @@ describe("KanbanBoardPlugin", () => {
       command.editorCallback(editor);
       const inserted = editor.replaceSelection.mock.calls[0][0];
       expect(inserted).toContain("```kanban");
-      expect(inserted).toContain("source:");
+      expect(inserted).toContain("query:");
       expect(inserted).toContain("columns:");
       expect(inserted).toContain("group-by:");
     });

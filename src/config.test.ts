@@ -2,7 +2,6 @@ import { parseKanbanConfig, KanbanConfig } from "./config";
 
 describe("parseKanbanConfig", () => {
   const validSource = [
-    "source: Tasks",
     'query: WHERE status != "archive"',
     "columns: Backlog, In Progress, Done",
     "group-by: status",
@@ -13,7 +12,6 @@ describe("parseKanbanConfig", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.config).toEqual<KanbanConfig>({
-      source: "Tasks",
       query: 'WHERE status != "archive"',
       sourceType: "pages",
       columns: ["Backlog", "In Progress", "Done"],
@@ -21,13 +19,13 @@ describe("parseKanbanConfig", () => {
       sortBy: undefined,
       filterTags: undefined,
       hideFields: undefined,
+      doneColumns: [],
       showDone: true,
     });
   });
 
   it("should parse all optional fields", () => {
     const source = [
-      "source: Tasks",
       'query: WHERE status != "archive"',
       "columns: Backlog, In Progress, Done",
       "group-by: status",
@@ -35,6 +33,7 @@ describe("parseKanbanConfig", () => {
       "sort-by: due",
       "filter-tags: work, urgent",
       "hide-fields: project, tags",
+      "done-columns: Done",
       "show-done: false",
     ].join("\n");
 
@@ -44,11 +43,12 @@ describe("parseKanbanConfig", () => {
     expect(result.config.sortBy).toBe("due");
     expect(result.config.filterTags).toEqual(["work", "urgent"]);
     expect(result.config.hideFields).toEqual(["project", "tags"]);
+    expect(result.config.doneColumns).toEqual(["Done"]);
     expect(result.config.showDone).toBe(false);
   });
 
   it("should return errors for missing required fields", () => {
-    const result = parseKanbanConfig("source: Tasks");
+    const result = parseKanbanConfig("");
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.errors).toContain('Missing required field: "query"');
@@ -60,12 +60,11 @@ describe("parseKanbanConfig", () => {
     const result = parseKanbanConfig("");
     expect(result.ok).toBe(false);
     if (result.ok) return;
-    expect(result.errors).toHaveLength(4);
+    expect(result.errors).toHaveLength(3);
   });
 
   it("should reject invalid source-type", () => {
     const source = [
-      "source: Tasks",
       'query: WHERE status != "archive"',
       "columns: Backlog, Done",
       "group-by: status",
@@ -82,7 +81,6 @@ describe("parseKanbanConfig", () => {
     const source = [
       "# My board config",
       "",
-      "source: Tasks",
       'query: WHERE status != "archive"',
       "# Columns setup",
       "columns: Backlog, Done",
@@ -95,7 +93,6 @@ describe("parseKanbanConfig", () => {
 
   it("should handle keys case-insensitively", () => {
     const source = [
-      "Source: Tasks",
       'Query: WHERE status != "archive"',
       "Columns: Backlog, Done",
       "Group-By: status",
@@ -107,7 +104,6 @@ describe("parseKanbanConfig", () => {
 
   it("should handle colons in values", () => {
     const source = [
-      "source: Tasks",
       'query: WHERE status != "archive" AND due >= date(today)',
       "columns: Backlog, Done",
       "group-by: status",
@@ -121,7 +117,6 @@ describe("parseKanbanConfig", () => {
 
   it("should reject columns with empty value", () => {
     const source = [
-      "source: Tasks",
       'query: WHERE status != "archive"',
       "columns: ,,,",
       "group-by: status",
@@ -145,5 +140,12 @@ describe("parseKanbanConfig", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.config.showDone).toBe(true);
+  });
+
+  it("should default done-columns to empty array", () => {
+    const result = parseKanbanConfig(validSource);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.config.doneColumns).toEqual([]);
   });
 });

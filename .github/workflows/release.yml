@@ -1,0 +1,49 @@
+name: Release Obsidian Plugin
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm install
+
+      - run: npm run build
+
+      - name: Get version from manifest
+        id: version
+        run: |
+          echo "version=$(jq -r '.version' manifest.json)" >> "$GITHUB_OUTPUT"
+          echo "name=$(jq -r '.name' manifest.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Check if release already exists
+        id: check
+        run: |
+          if gh release view "${{ steps.version.outputs.version }}" &>/dev/null; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Create release
+        if: steps.check.outputs.exists == 'false'
+        run: |
+          gh release create "${{ steps.version.outputs.version }}" \
+            --title "${{ steps.version.outputs.name }} v${{ steps.version.outputs.version }}" \
+            --generate-notes \
+            main.js manifest.json styles.css
+        env:
+          GH_TOKEN: ${{ github.token }}

@@ -152,7 +152,7 @@ describe("initCardActions", () => {
     const { boardEl, titles } = makeMockBoardEl();
     const context: CardActionContext = {
       app: {} as any,
-      config: { source: "Tasks", query: "", sourceType: "pages", columns: [], groupBy: "status", showDone: true },
+      config: { query: "", sourceType: "pages", columns: [], groupBy: "status", doneColumns: [], showDone: true },
       isDragging: () => false,
     };
 
@@ -165,7 +165,7 @@ describe("initCardActions", () => {
     const { boardEl, checkboxes } = makeMockBoardEl();
     const context: CardActionContext = {
       app: {} as any,
-      config: { source: "Tasks", query: "", sourceType: "pages", columns: [], groupBy: "status", showDone: true },
+      config: { query: "", sourceType: "pages", columns: [], groupBy: "status", doneColumns: [], showDone: true },
       isDragging: () => false,
     };
 
@@ -185,7 +185,7 @@ describe("initCardActions", () => {
     const { boardEl, titles } = makeMockBoardEl();
     const context: CardActionContext = {
       app,
-      config: { source: "Tasks", query: "", sourceType: "pages", columns: [], groupBy: "status", showDone: true },
+      config: { query: "", sourceType: "pages", columns: [], groupBy: "status", doneColumns: [], showDone: true },
       isDragging: () => true,
     };
 
@@ -209,7 +209,7 @@ describe("initCardActions", () => {
     const { boardEl, titles } = makeMockBoardEl();
     const context: CardActionContext = {
       app,
-      config: { source: "Tasks", query: "", sourceType: "pages", columns: [], groupBy: "status", showDone: true },
+      config: { query: "", sourceType: "pages", columns: [], groupBy: "status", doneColumns: [], showDone: true },
       isDragging: () => false,
     };
 
@@ -231,7 +231,7 @@ describe("initCardActions", () => {
     const { boardEl, checkboxes } = makeMockBoardEl();
     const context: CardActionContext = {
       app,
-      config: { source: "Tasks", query: "", sourceType: "pages", columns: [], groupBy: "status", showDone: true },
+      config: { query: "", sourceType: "pages", columns: [], groupBy: "status", doneColumns: [], showDone: true },
       isDragging: () => true,
     };
 
@@ -260,7 +260,7 @@ describe("initCardActions", () => {
     const { boardEl, checkboxes } = makeMockBoardEl();
     const context: CardActionContext = {
       app,
-      config: { source: "Tasks", query: "", sourceType: "pages", columns: [], groupBy: "status", showDone: true },
+      config: { query: "", sourceType: "pages", columns: [], groupBy: "status", doneColumns: [], showDone: true },
       isDragging: () => false,
     };
 
@@ -277,7 +277,7 @@ describe("initCardActions", () => {
     const { boardEl, titles, checkboxes } = makeMockBoardEl({ cardCount: 3 });
     const context: CardActionContext = {
       app: {} as any,
-      config: { source: "Tasks", query: "", sourceType: "pages", columns: [], groupBy: "status", showDone: true },
+      config: { query: "", sourceType: "pages", columns: [], groupBy: "status", doneColumns: [], showDone: true },
       isDragging: () => false,
     };
 

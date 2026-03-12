@@ -5,11 +5,11 @@ import { createMockEl } from "./__mocks__/obsidian";
 
 function makeConfig(overrides?: Partial<KanbanConfig>): KanbanConfig {
   return {
-    source: "Tasks",
     query: 'FROM "Tasks"',
     sourceType: "pages",
     columns: ["Backlog", "In Progress", "Done"],
     groupBy: "status",
+    doneColumns: [],
     showDone: true,
     ...overrides,
   };
@@ -246,7 +246,7 @@ describe("renderBoard", () => {
     expect(doneEmpty).toBeDefined();
   });
 
-  it("should filter out done cards when showDone is false", () => {
+  it("should filter out done columns when showDone is false", () => {
     const el = createMockEl();
     const columns: KanbanColumn[] = [
       { id: "Backlog", title: "Backlog", cards: [makeCard({ title: "A", status: "Backlog" })] },
@@ -255,15 +255,22 @@ describe("renderBoard", () => {
     renderBoard(el, columns, makeConfig({ showDone: false }));
 
     const colEls = findByClass(el, "kanban-column");
-    // Backlog has 1 card
-    const backlogCards = findByClass(colEls[0], "kanban-card");
-    expect(backlogCards).toHaveLength(1);
+    // Only Backlog column should remain (Done column is hidden entirely)
+    expect(colEls).toHaveLength(1);
+    expect(colEls[0].dataset.columnId).toBe("Backlog");
+  });
 
-    // Done should have 0 cards (filtered out) and show empty placeholder
-    const doneCards = findByClass(colEls[1], "kanban-card");
-    expect(doneCards).toHaveLength(0);
-    const doneEmpty = findByClassFirst(colEls[1], "kanban-column-empty");
-    expect(doneEmpty).toBeDefined();
+  it("should filter out custom done-columns when showDone is false", () => {
+    const el = createMockEl();
+    const columns: KanbanColumn[] = [
+      { id: "Backlog", title: "Backlog", cards: [makeCard({ title: "A", status: "Backlog" })] },
+      { id: "Completed", title: "Completed", cards: [makeCard({ title: "B", status: "Completed" })] },
+    ];
+    renderBoard(el, columns, makeConfig({ showDone: false, doneColumns: ["Completed"] }));
+
+    const colEls = findByClass(el, "kanban-column");
+    expect(colEls).toHaveLength(1);
+    expect(colEls[0].dataset.columnId).toBe("Backlog");
   });
 
   it("should show empty board message when all columns have zero cards", () => {

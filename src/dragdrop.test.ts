@@ -20,11 +20,11 @@ const Sortable = require("sortablejs").default;
 
 function makeConfig(overrides?: Partial<KanbanConfig>): KanbanConfig {
   return {
-    source: "Tasks",
     query: 'FROM "Tasks"',
     sourceType: "pages",
     columns: ["Backlog", "In Progress", "Done"],
     groupBy: "status",
+    doneColumns: [],
     showDone: true,
     ...overrides,
   };

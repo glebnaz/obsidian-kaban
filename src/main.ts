@@ -7,8 +7,7 @@ import { initCardActions, CardActionContext } from "./cardactions";
 import Sortable from "sortablejs";
 
 const TEMPLATE_BLOCK = `\`\`\`kanban
-source: Tasks
-query: WHERE status != "archive"
+query: FROM "Tasks" WHERE status != "archive"
 columns: Backlog, In Progress, Done
 group-by: status
 \`\`\``;

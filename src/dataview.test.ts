@@ -16,11 +16,11 @@ import { Component } from "./__mocks__/obsidian";
 
 function makeConfig(overrides?: Partial<KanbanConfig>): KanbanConfig {
   return {
-    source: "Tasks",
     query: 'FROM "Tasks"',
     sourceType: "pages",
     columns: ["Backlog", "In Progress", "Done"],
     groupBy: "status",
+    doneColumns: [],
     showDone: true,
     ...overrides,
   };

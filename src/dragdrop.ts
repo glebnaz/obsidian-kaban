@@ -58,6 +58,9 @@ export function initSortableOnColumns(
 
         if (!filePath || !newStatus) return;
 
+        const isDoneColumn = context.config.doneColumns.includes(newStatus);
+        const lineNumber = cardEl.dataset.lineNumber ? parseInt(cardEl.dataset.lineNumber) : undefined;
+
         try {
           await updateTaskStatus(
             context.app,
@@ -65,8 +68,13 @@ export function initSortableOnColumns(
             context.config.groupBy,
             newStatus,
             cardType,
-            cardEl.dataset.lineNumber ? parseInt(cardEl.dataset.lineNumber) : undefined
+            lineNumber
           );
+
+          if (cardType === "checkbox" && lineNumber != null) {
+            await updateCheckboxState(context.app, filePath, lineNumber, isDoneColumn);
+          }
+
           new Notice(`Task moved to ${newStatus}`);
         } catch (err) {
           // Revert: move card back to source column
@@ -129,6 +137,28 @@ export async function updateTaskStatus(
 
   await app.fileManager.processFrontMatter(file, (fm: any) => {
     fm[groupByField] = newStatus;
+  });
+}
+
+export async function updateCheckboxState(
+  app: App,
+  filePath: string,
+  lineNumber: number,
+  checked: boolean
+): Promise<void> {
+  const file = app.vault.getAbstractFileByPath(filePath);
+  if (!file || !(file instanceof TFile)) return;
+
+  await app.vault.process(file, (content: string) => {
+    const lines = content.split("\n");
+    if (lineNumber < 0 || lineNumber >= lines.length) return content;
+    const line = lines[lineNumber];
+    if (checked && /- \[ \]/.test(line)) {
+      lines[lineNumber] = line.replace("- [ ]", "- [x]");
+    } else if (!checked && /- \[x\]/i.test(line)) {
+      lines[lineNumber] = line.replace(/- \[x\]/i, "- [ ]");
+    }
+    return lines.join("\n");
   });
 }
 

@@ -1,7 +1,6 @@
 export type SourceType = "pages" | "tasks";
 
 export interface KanbanConfig {
-  source: string;
   query: string;
   sourceType: SourceType;
   columns: string[];
@@ -9,6 +8,7 @@ export interface KanbanConfig {
   sortBy?: string;
   filterTags?: string[];
   hideFields?: string[];
+  doneColumns: string[];
   showDone: boolean;
 }
 
@@ -24,7 +24,7 @@ export interface ParseError {
 
 export type ParseOutcome = ParseResult | ParseError;
 
-const REQUIRED_FIELDS = ["source", "query", "columns", "group-by"] as const;
+const REQUIRED_FIELDS = ["query", "columns", "group-by"] as const;
 
 function splitCommaSeparated(value: string): string[] {
   return value
@@ -71,7 +71,6 @@ export function parseKanbanConfig(source: string): ParseOutcome {
   }
 
   const config: KanbanConfig = {
-    source: raw["source"],
     query: raw["query"],
     sourceType,
     columns: splitCommaSeparated(raw["columns"]),
@@ -79,6 +78,7 @@ export function parseKanbanConfig(source: string): ParseOutcome {
     sortBy: raw["sort-by"] || undefined,
     filterTags: raw["filter-tags"] ? splitCommaSeparated(raw["filter-tags"]) : undefined,
     hideFields: raw["hide-fields"] ? splitCommaSeparated(raw["hide-fields"]) : undefined,
+    doneColumns: raw["done-columns"] ? splitCommaSeparated(raw["done-columns"]) : [],
     showDone: raw["show-done"] !== "false",
   };
 

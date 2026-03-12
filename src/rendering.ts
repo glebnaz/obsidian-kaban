@@ -19,10 +19,10 @@ function isFieldHidden(field: string, config: KanbanConfig): boolean {
 
 function filterDoneCards(columns: KanbanColumn[], config: KanbanConfig): KanbanColumn[] {
   if (config.showDone) return columns;
-  return columns.map((col) => ({
-    ...col,
-    cards: col.cards.filter((card) => card.status.toLowerCase() !== "done"),
-  }));
+  const doneSet = new Set(config.doneColumns.map((c) => c.toLowerCase()));
+  // Fall back to "done" if no done-columns configured
+  if (doneSet.size === 0) doneSet.add("done");
+  return columns.filter((col) => !doneSet.has(col.id.toLowerCase()));
 }
 
 export function renderCard(el: HTMLElement, card: KanbanCard, config: KanbanConfig): void {
@@ -36,7 +36,9 @@ export function renderCard(el: HTMLElement, card: KanbanCard, config: KanbanConf
   const titleRow = cardEl.createEl("div", { cls: "kanban-card-header" });
 
   if (!isFieldHidden("checkbox", config)) {
-    titleRow.createEl("input", { type: "checkbox" } as any);
+    const isDone = config.doneColumns.some((dc) => dc.toLowerCase() === card.status.toLowerCase());
+    const cb = titleRow.createEl("input", { type: "checkbox" } as any);
+    if (isDone) (cb as HTMLInputElement).checked = true;
   }
 
   titleRow.createEl("span", { cls: "kanban-card-title", text: card.title });
@@ -68,7 +70,9 @@ export function renderCard(el: HTMLElement, card: KanbanCard, config: KanbanConf
 }
 
 export function renderColumn(el: HTMLElement, column: KanbanColumn, config: KanbanConfig): void {
+  const isDone = config.doneColumns.some((dc) => dc.toLowerCase() === column.id.toLowerCase());
   const colEl = el.createEl("div", { cls: "kanban-column" });
+  if (isDone) colEl.classList.add("kanban-column-done");
   colEl.dataset.columnId = column.id;
 
   const header = colEl.createEl("div", { cls: "kanban-column-header" });
