@@ -7,8 +7,10 @@
  *  - Parentheses
  *  - String/number/boolean/null literals
  *  - Field access: field, file.name, file.path
- *  - Functions: contains(), length(), date(), number(), lower(), upper()
+ *  - Functions: contains(), length(), date(), dur(), number(), lower(), upper()
  *  - date(today), date(now), date("2026-01-01")
+ *  - dur(3 days), dur(1 week), dur(2 hours)
+ *  - Arithmetic: date(today) + dur(3 days)
  *  - Array membership: contains(tags, "#bug")
  */
 
@@ -22,6 +24,8 @@ type TokenType =
   | "LPAREN"
   | "RPAREN"
   | "COMMA"
+  | "PLUS"
+  | "MINUS"
   | "AND"
   | "OR"
   | "NOT"
@@ -39,6 +43,12 @@ type TokenType =
 interface Token {
   type: TokenType;
   value: string;
+}
+
+function isValueToken(t: Token | undefined): boolean {
+  if (!t) return false;
+  return t.type === "NUMBER" || t.type === "STRING" || t.type === "IDENT" ||
+    t.type === "RPAREN" || t.type === "TRUE" || t.type === "FALSE" || t.type === "NULL";
 }
 
 function tokenize(input: string): Token[] {
@@ -71,8 +81,8 @@ function tokenize(input: string): Token[] {
       continue;
     }
 
-    // Number
-    if (/\d/.test(input[i]) || (input[i] === "-" && i + 1 < input.length && /\d/.test(input[i + 1]))) {
+    // Number (negative numbers handled: only if '-' is not after a value token)
+    if (/\d/.test(input[i]) || (input[i] === "-" && i + 1 < input.length && /\d/.test(input[i + 1]) && !isValueToken(tokens[tokens.length - 1]))) {
       let num = input[i];
       i++;
       while (i < input.length && /[\d.]/.test(input[i])) {
@@ -116,6 +126,16 @@ function tokenize(input: string): Token[] {
     }
     if (input[i] === "<") {
       tokens.push({ type: "LT", value: "<" });
+      i++;
+      continue;
+    }
+    if (input[i] === "+") {
+      tokens.push({ type: "PLUS", value: "+" });
+      i++;
+      continue;
+    }
+    if (input[i] === "-") {
+      tokens.push({ type: "MINUS", value: "-" });
       i++;
       continue;
     }
@@ -186,10 +206,25 @@ type ASTNode =
   | { kind: "literal"; value: any }
   | { kind: "field"; path: string[] }
   | { kind: "compare"; op: string; left: ASTNode; right: ASTNode }
+  | { kind: "arith"; op: "+" | "-"; left: ASTNode; right: ASTNode }
   | { kind: "and"; left: ASTNode; right: ASTNode }
   | { kind: "or"; left: ASTNode; right: ASTNode }
   | { kind: "not"; expr: ASTNode }
   | { kind: "call"; name: string; args: ASTNode[] };
+
+function parseDuration(amount: number, unit: string): number {
+  switch (unit) {
+    case "ms": case "millisecond": case "milliseconds": return amount;
+    case "s": case "sec": case "second": case "seconds": return amount * 1000;
+    case "m": case "min": case "minute": case "minutes": return amount * 60 * 1000;
+    case "h": case "hr": case "hour": case "hours": return amount * 60 * 60 * 1000;
+    case "d": case "day": case "days": return amount * 24 * 60 * 60 * 1000;
+    case "w": case "week": case "weeks": return amount * 7 * 24 * 60 * 60 * 1000;
+    case "mo": case "month": case "months": return amount * 30 * 24 * 60 * 60 * 1000;
+    case "y": case "year": case "years": return amount * 365 * 24 * 60 * 60 * 1000;
+    default: return amount * 24 * 60 * 60 * 1000; // default to days
+  }
+}
 
 // ── Parser ──────────────────────────────────────────────────
 
@@ -257,7 +292,7 @@ class Parser {
   }
 
   private parseComparison(): ASTNode {
-    const left = this.parsePrimary();
+    const left = this.parseAddSub();
     const t = this.peek();
     if (
       t.type === "EQ" ||
@@ -268,8 +303,18 @@ class Parser {
       t.type === "LTE"
     ) {
       this.advance();
-      const right = this.parsePrimary();
+      const right = this.parseAddSub();
       return { kind: "compare", op: t.value, left, right };
+    }
+    return left;
+  }
+
+  private parseAddSub(): ASTNode {
+    let left = this.parsePrimary();
+    while (this.peek().type === "PLUS" || this.peek().type === "MINUS") {
+      const op = this.advance().value as "+" | "-";
+      const right = this.parsePrimary();
+      left = { kind: "arith", op, left, right };
     }
     return left;
   }
@@ -316,6 +361,20 @@ class Parser {
       // Function call?
       if (this.peek().type === "LPAREN") {
         this.advance(); // skip (
+        const lowerName = name.toLowerCase();
+
+        // dur() special handling: dur(3 days), dur(1 week), etc.
+        if (lowerName === "dur" && this.peek().type === "NUMBER") {
+          const numToken = this.advance();
+          let unit = "days";
+          if (this.peek().type === "IDENT") {
+            unit = this.advance().value.toLowerCase();
+          }
+          this.expect("RPAREN");
+          const ms = parseDuration(parseFloat(numToken.value), unit);
+          return { kind: "literal", value: ms };
+        }
+
         const args: ASTNode[] = [];
         if (this.peek().type !== "RPAREN") {
           args.push(this.parseOr());
@@ -325,7 +384,7 @@ class Parser {
           }
         }
         this.expect("RPAREN");
-        return { kind: "call", name: name.toLowerCase(), args };
+        return { kind: "call", name: lowerName, args };
       }
 
       // Field access with dots
@@ -431,6 +490,15 @@ function evaluate(node: ASTNode, ctx: any): any {
         default:
           return false;
       }
+    }
+
+    case "arith": {
+      const leftVal = toComparable(evaluate(node.left, ctx));
+      const rightVal = toComparable(evaluate(node.right, ctx));
+      if (typeof leftVal === "number" && typeof rightVal === "number") {
+        return node.op === "+" ? leftVal + rightVal : leftVal - rightVal;
+      }
+      return null;
     }
 
     case "call":

@@ -227,6 +227,53 @@ describe("parseWhere", () => {
     });
   });
 
+  describe("dur() and arithmetic", () => {
+    it("should parse dur(3 days) as milliseconds", () => {
+      const filter = parseWhere("due <= date(today) + dur(3 days)")!;
+      const now = new Date();
+      const in2days = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate() + 2));
+      const in5days = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate() + 5));
+      expect(filter({ due: in2days.toISOString().slice(0, 10) })).toBe(true);
+      expect(filter({ due: in5days.toISOString().slice(0, 10) })).toBe(false);
+    });
+
+    it("should parse dur(1 week)", () => {
+      const filter = parseWhere("due <= date(today) + dur(1 week)")!;
+      const now = new Date();
+      const in6days = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate() + 6));
+      const in10days = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate() + 10));
+      expect(filter({ due: in6days.toISOString().slice(0, 10) })).toBe(true);
+      expect(filter({ due: in10days.toISOString().slice(0, 10) })).toBe(false);
+    });
+
+    it("should parse dur(2 hours)", () => {
+      const filter = parseWhere("value <= 7200000")!;
+      // 2 hours = 7200000ms — just verify dur produces correct value
+      const durFilter = parseWhere("value <= dur(2 hours)")!;
+      expect(durFilter({ value: 7200000 })).toBe(true);
+      expect(durFilter({ value: 7200001 })).toBe(false);
+    });
+
+    it("should handle date subtraction", () => {
+      const filter = parseWhere("due >= date(today) - dur(1 days)")!;
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yd = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, "0")}-${String(yesterday.getDate()).padStart(2, "0")}`;
+      expect(filter({ due: yd })).toBe(true);
+      expect(filter({ due: "2020-01-01" })).toBe(false);
+    });
+
+    it("should handle the dashboard query pattern", () => {
+      const filter = parseWhere('type = "Task" AND status != "done" AND due != null AND due <= date(today) + dur(3 days)')!;
+      const now = new Date();
+      const tomorrow = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate() + 1));
+      const tomorrowStr = tomorrow.toISOString().slice(0, 10);
+      expect(filter({ type: "Task", status: "todo", due: tomorrowStr })).toBe(true);
+      expect(filter({ type: "Task", status: "done", due: tomorrowStr })).toBe(false);
+      expect(filter({ type: "Task", status: "todo", due: null })).toBe(false);
+    });
+  });
+
   describe("real-world Dataview expressions", () => {
     it('eisenhower matrix filter', () => {
       const filter = parseWhere('eisenhower = "important-not-urgent" AND status != "done"')!;
