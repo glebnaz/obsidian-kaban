@@ -75,6 +75,17 @@ export function initSortableOnColumns(
             await updateCheckboxState(context.app, filePath, lineNumber, isDoneColumn);
           }
 
+          if (context.config.completedField) {
+            await updateCompletedDate(
+              context.app,
+              filePath,
+              context.config.completedField,
+              isDoneColumn,
+              cardType,
+              lineNumber
+            );
+          }
+
           new Notice(`Task moved to ${newStatus}`);
         } catch (err) {
           // Revert: move card back to source column
@@ -159,6 +170,54 @@ export async function updateCheckboxState(
       lines[lineNumber] = line.replace(/- \[x\]/i, "- [ ]");
     }
     return lines.join("\n");
+  });
+}
+
+function todayISO(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+export async function updateCompletedDate(
+  app: App,
+  filePath: string,
+  completedField: string,
+  isDone: boolean,
+  cardType: "file" | "checkbox",
+  lineNumber?: number
+): Promise<void> {
+  const file = app.vault.getAbstractFileByPath(filePath);
+  if (!file || !(file instanceof TFile)) return;
+
+  if (cardType === "checkbox") {
+    if (lineNumber == null) return;
+    await app.vault.process(file, (content: string) => {
+      const lines = content.split("\n");
+      if (lineNumber < 0 || lineNumber >= lines.length) return content;
+      const line = lines[lineNumber];
+      const fieldRegex = new RegExp(`\\[${completedField}::\\s*[^\\]]*\\]`, "i");
+      if (isDone) {
+        if (fieldRegex.test(line)) {
+          lines[lineNumber] = line.replace(fieldRegex, `[${completedField}:: ${todayISO()}]`);
+        } else {
+          lines[lineNumber] = line.trimEnd() + ` [${completedField}:: ${todayISO()}]`;
+        }
+      } else {
+        // Remove completed date when moved out of done column
+        lines[lineNumber] = line.replace(fieldRegex, "").replace(/\s{2,}/g, " ").trimEnd();
+      }
+      return lines.join("\n");
+    });
+    return;
+  }
+
+  // File card — update frontmatter
+  await app.fileManager.processFrontMatter(file, (fm: any) => {
+    if (isDone) {
+      fm[completedField] = todayISO();
+    } else {
+      delete fm[completedField];
+    }
   });
 }
 

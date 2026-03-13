@@ -11,6 +11,7 @@ export interface KanbanConfig {
   doneColumns: string[];
   showDone: boolean;
   createdField?: string;
+  completedField?: string;
 }
 
 export interface ParseResult {
@@ -82,6 +83,7 @@ export function parseKanbanConfig(source: string): ParseOutcome {
     doneColumns: raw["done-columns"] ? splitCommaSeparated(raw["done-columns"]) : [],
     showDone: raw["show-done"] !== "false",
     createdField: raw["created-field"] || undefined,
+    completedField: raw["completed-field"] || undefined,
   };
 
   if (config.columns.length === 0) {

@@ -1,5 +1,6 @@
 import { App, Notice, TFile } from "obsidian";
 import { KanbanConfig } from "./config";
+import { updateCompletedDate } from "./dragdrop";
 
 export interface CardActionContext {
   app: App;
@@ -41,7 +42,18 @@ export function initCardActions(
 
       const lineNumber = cardEl.dataset.lineNumber ? parseInt(cardEl.dataset.lineNumber) : undefined;
       try {
+        const wasChecked = (cbEl as HTMLInputElement).checked;
         await toggleCardDone(context.app, filePath, context.config.groupBy, cardType, lineNumber);
+        if (context.config.completedField) {
+          await updateCompletedDate(
+            context.app,
+            filePath,
+            context.config.completedField,
+            wasChecked, // checkbox was just toggled, so checked = now done
+            cardType,
+            lineNumber
+          );
+        }
         new Notice("Task marked as done");
       } catch (err) {
         (cbEl as HTMLInputElement).checked = !(cbEl as HTMLInputElement).checked;

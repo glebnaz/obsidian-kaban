@@ -1,4 +1,4 @@
-import { updateTaskStatus, destroySortables, generateBoardId, initSortableOnColumns, DragDropContext } from "./dragdrop";
+import { updateTaskStatus, updateCompletedDate, destroySortables, generateBoardId, initSortableOnColumns, DragDropContext } from "./dragdrop";
 import { KanbanConfig } from "./config";
 import { TFile } from "./__mocks__/obsidian";
 
@@ -119,6 +119,82 @@ describe("updateTaskStatus", () => {
     await updateTaskStatus(app, "Tasks/todo.md", "priority", "high", "file");
 
     expect(capturedFm.priority).toBe("high");
+  });
+});
+
+describe("updateCompletedDate", () => {
+  it("should set completed date in frontmatter when done", async () => {
+    const capturedFm: any = {};
+    const mockFile = Object.assign(new TFile(), { path: "Tasks/todo.md" });
+    const app: any = {
+      vault: { getAbstractFileByPath: jest.fn().mockReturnValue(mockFile) },
+      fileManager: {
+        processFrontMatter: jest.fn().mockImplementation((_file, cb) => {
+          cb(capturedFm);
+          return Promise.resolve();
+        }),
+      },
+    };
+
+    await updateCompletedDate(app, "Tasks/todo.md", "completed", true, "file");
+
+    expect(capturedFm.completed).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
+  it("should remove completed date from frontmatter when undone", async () => {
+    const capturedFm: any = { completed: "2026-03-13" };
+    const mockFile = Object.assign(new TFile(), { path: "Tasks/todo.md" });
+    const app: any = {
+      vault: { getAbstractFileByPath: jest.fn().mockReturnValue(mockFile) },
+      fileManager: {
+        processFrontMatter: jest.fn().mockImplementation((_file, cb) => {
+          cb(capturedFm);
+          return Promise.resolve();
+        }),
+      },
+    };
+
+    await updateCompletedDate(app, "Tasks/todo.md", "completed", false, "file");
+
+    expect(capturedFm.completed).toBeUndefined();
+  });
+
+  it("should add completed inline field for checkbox when done", async () => {
+    const mockFile = Object.assign(new TFile(), { path: "tasks.md" });
+    let result = "";
+    const app: any = {
+      vault: {
+        getAbstractFileByPath: jest.fn().mockReturnValue(mockFile),
+        process: jest.fn().mockImplementation((_file, cb) => {
+          result = cb("- [x] Do thing [status:: done]");
+          return Promise.resolve();
+        }),
+      },
+      fileManager: { processFrontMatter: jest.fn() },
+    };
+
+    await updateCompletedDate(app, "tasks.md", "completed", true, "checkbox", 0);
+
+    expect(result).toMatch(/\[completed:: \d{4}-\d{2}-\d{2}\]/);
+  });
+
+  it("should remove completed inline field for checkbox when undone", async () => {
+    const mockFile = Object.assign(new TFile(), { path: "tasks.md" });
+    let result = "";
+    const app: any = {
+      vault: {
+        getAbstractFileByPath: jest.fn().mockReturnValue(mockFile),
+        process: jest.fn().mockImplementation((_file, cb) => {
+          result = cb("- [ ] Do thing [status:: todo] [completed:: 2026-03-13]");
+          return Promise.resolve();
+        }),
+      },
+      fileManager: { processFrontMatter: jest.fn() },
+    };
+
+    await updateCompletedDate(app, "tasks.md", "completed", false, "checkbox", 0);
+
+    expect(result).not.toContain("[completed::");
   });
 });
 
