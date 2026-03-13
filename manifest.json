@@ -1,9 +1,9 @@
 {
-  "id": "kaban",
-  "name": "Kaban",
-  "version": "0.1.0",
-  "minAppVersion": "1.4.0",
-  "description": "Render kanban boards from code blocks using Dataview queries",
-  "author": "gleb-nazemnov",
-  "isDesktopOnly": false
+	"id": "kaban",
+	"name": "Kaban",
+	"version": "0.2.0",
+	"minAppVersion": "1.4.0",
+	"description": "Render kanban boards from code blocks using Dataview queries",
+	"author": "gleb-nazemnov",
+	"isDesktopOnly": false
 }
