@@ -12,6 +12,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: actions/setup-node@v4
         with:
@@ -19,27 +22,39 @@ jobs:
 
       - run: npm install
 
-      - run: npm run build
+      - name: Determine version bump
+        id: bump
+        run: |
+          LAST_MSG=$(git log -1 --pretty=%s)
+          if echo "$LAST_MSG" | grep -qiE '^feat(\(|:|!)'; then
+            echo "type=minor" >> "$GITHUB_OUTPUT"
+          else
+            echo "type=patch" >> "$GITHUB_OUTPUT"
+          fi
 
-      - name: Get version from manifest
+      - name: Bump version
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          npm version ${{ steps.bump.outputs.type }} --no-git-tag-version
+          node version-bump.mjs
+
+      - name: Get new version
         id: version
         run: |
           echo "version=$(jq -r '.version' manifest.json)" >> "$GITHUB_OUTPUT"
           echo "name=$(jq -r '.name' manifest.json)" >> "$GITHUB_OUTPUT"
 
-      - name: Check if release already exists
-        id: check
+      - run: npm run build
+
+      - name: Commit version bump
         run: |
-          if gh release view "${{ steps.version.outputs.version }}" &>/dev/null; then
-            echo "exists=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "exists=false" >> "$GITHUB_OUTPUT"
-          fi
-        env:
-          GH_TOKEN: ${{ github.token }}
+          git add package.json manifest.json versions.json
+          git commit -m "chore: bump version to ${{ steps.version.outputs.version }} [skip ci]"
+          git tag "v${{ steps.version.outputs.version }}"
+          git push origin main --tags
 
       - name: Create release
-        if: steps.check.outputs.exists == 'false'
         run: |
           gh release create "${{ steps.version.outputs.version }}" \
             --title "${{ steps.version.outputs.name }} v${{ steps.version.outputs.version }}" \

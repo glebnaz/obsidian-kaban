@@ -1,14 +1,26 @@
 # Выпуск новой версии
 
-## Процесс
+## Автоматический процесс
 
-1. Создай ветку от `main` и сделай изменения
-2. Когда всё готово, обнови версию:
+При каждом merge/push в `main` GitHub Action автоматически:
+
+1. Определяет тип версии по commit message:
+   - `feat:` / `feat(...):`  → **minor** (0.2.0 → 0.3.0)
+   - Всё остальное → **patch** (0.2.0 → 0.2.1)
+2. Бампает версию в `package.json`, `manifest.json`, `versions.json`
+3. Коммитит bump, создаёт git-тег
+4. Создаёт GitHub Release с файлами `main.js`, `manifest.json`, `styles.css`
+
+Коммит с `[skip ci]` в сообщении не запускает повторный workflow.
+
+## Ручной bump (опционально)
+
+Если нужно контролировать версию вручную:
 
 ```bash
-npm version patch   # 0.1.0 → 0.1.1 (багфикс)
-npm version minor   # 0.1.0 → 0.2.0 (новая фича)
-npm version major   # 0.1.0 → 1.0.0 (breaking changes)
+npm version patch   # 0.2.0 → 0.2.1 (багфикс)
+npm version minor   # 0.2.0 → 0.3.0 (новая фича)
+npm version major   # 0.2.0 → 1.0.0 (breaking changes)
 ```
 
 Эта команда автоматически:
@@ -16,9 +28,6 @@ npm version major   # 0.1.0 → 1.0.0 (breaking changes)
 - обновит `version` в `manifest.json`
 - добавит запись в `versions.json`
 - создаст git-коммит и тег
-
-3. Запуш ветку и создай PR в `main`
-4. После merge в `main` — GitHub Action автоматически создаст Release с файлами `main.js`, `manifest.json`, `styles.css`
 
 ## Установка для пользователей
 

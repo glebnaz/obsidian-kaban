@@ -1,6 +1,10 @@
 import { readFileSync, writeFileSync } from "fs";
 
-const targetVersion = process.env.npm_package_version;
+// When called from npm version hook, use npm_package_version.
+// When called standalone (CI), read version from package.json.
+const targetVersion =
+  process.env.npm_package_version ||
+  JSON.parse(readFileSync("package.json", "utf8")).version;
 
 let manifest = JSON.parse(readFileSync("manifest.json", "utf8"));
 const { minAppVersion } = manifest;
