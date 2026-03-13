@@ -13,9 +13,10 @@ Obsidian-плагин для отображения канбан-досок из
 
 ```
 src/
-├── main.ts          — точка входа, регистрация code block processor для ```kanban
+├── main.ts          — точка входа, регистрация code block processor и команд для ```kanban
 ├── config.ts        — парсинг и валидация конфигурации из code block
 ├── dataview.ts      — загрузка данных через Dataview API, группировка в колонки
+├── where.ts         — парсер WHERE выражений (tokenizer + recursive descent + evaluator)
 ├── rendering.ts     — HTML-рендеринг доски, колонок и карточек
 ├── cardactions.ts   — обработчики кликов (открытие файла, toggle чекбокса)
 ├── dragdrop.ts      — drag-and-drop через SortableJS
@@ -26,6 +27,7 @@ src/
 
 ```
 Code block → parseKanbanConfig → getDataviewApi → loadBoard
+  → splitQuery (source + WHERE) → api.pages(source) → parseWhere → filter pages
   → fetchPages/fetchTasks → groupIntoColumns → filterByTags → sortCards
   → renderBoard → renderColumn → renderCard
   → initSortableOnColumns → initCardActions → subscribeToMetadataChange
@@ -64,6 +66,7 @@ filter-tags: bug, feature
 hide-fields: project
 done-columns: Done
 show-done: true|false
+created-field: created
 ```
 
 Обязательные поля: `query`, `columns`, `group-by`.
@@ -75,7 +78,9 @@ show-done: true|false
 - **Safe clicks** — флаг `isDragging` предотвращает случайные клики во время drag
 - **Done columns** — колонки из `done-columns` подсвечиваются зелёным; при перетаскивании checkbox-карточки в done-колонку чекбокс автоматически отмечается, при перетаскивании из — снимается
 - **Status toggle** — file cards: Done ↔ Backlog; checkbox cards: `- [ ]` ↔ `- [x]`
-- **Inline field parsing** — regex `\[field::\s*value\]` для извлечения метаданных из текста задач
+- **Inline field parsing** — regex `\[field::\s*value\]` для извлечения метаданных из текста задач с fallback на Dataview task properties
+- **WHERE parser** — tokenizer + recursive descent parser для Dataview WHERE выражений; splitQuery разделяет source (для dv.pages) и WHERE (JS-фильтр); поддерживает операторы сравнения, AND/OR/NOT, функции (contains, date, length и др.)
+- **Commands/Hotkeys** — Insert Page Board, Insert Task Board (all vault), Refresh all boards — доступны в Settings → Hotkeys
 
 ## Стили
 

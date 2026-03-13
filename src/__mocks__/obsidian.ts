@@ -27,7 +27,7 @@ export class Component {
 }
 
 export class Plugin extends Component {
-  app: any = {};
+  app: any = { metadataCache: { trigger: jest.fn(), on: jest.fn() } };
   manifest: any = {};
   registerMarkdownCodeBlockProcessor(_lang: string, _handler: any) {}
   addCommand(_command: any) {}

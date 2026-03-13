@@ -1,5 +1,6 @@
 import { App, Component } from "obsidian";
 import { KanbanConfig } from "./config";
+import { splitQuery, parseWhere } from "./where";
 
 export interface KanbanCard {
   id: string;
@@ -9,6 +10,7 @@ export interface KanbanCard {
   due?: string;
   tags?: string[];
   project?: string;
+  createdAt?: string;
   filePath: string;
   lineNumber?: number;
   cardType: "file" | "checkbox";
@@ -29,10 +31,10 @@ export function getDataviewApi(app: App): DataviewApi | null {
   return dv ?? null;
 }
 
-export function mapPageToCard(page: any, groupBy: string): KanbanCard {
+export function mapPageToCard(page: any, config: KanbanConfig): KanbanCard {
   const filePath = page.file?.path ?? "";
   const title = page.file?.name ?? "Untitled";
-  const status = String(page[groupBy] ?? "");
+  const status = String(page[config.groupBy] ?? "");
 
   const rawTags: string[] = [];
   if (page.file?.tags?.values) {
@@ -48,6 +50,12 @@ export function mapPageToCard(page: any, groupBy: string): KanbanCard {
     }
   }
 
+  let createdAt: string | undefined;
+  if (config.createdField) {
+    const val = page[config.createdField] ?? page.file?.[config.createdField];
+    if (val != null) createdAt = String(val);
+  }
+
   return {
     id: filePath,
     title,
@@ -56,21 +64,31 @@ export function mapPageToCard(page: any, groupBy: string): KanbanCard {
     due: page.due != null ? String(page.due) : undefined,
     tags: rawTags.length > 0 ? rawTags : undefined,
     project: page.project != null ? String(page.project) : undefined,
+    createdAt,
     filePath,
     cardType: "file",
   };
 }
 
 export function fetchPages(api: DataviewApi, config: KanbanConfig): KanbanCard[] {
-  // api.pages() expects a source expression without the FROM keyword
-  const query = config.query.replace(/^\s*FROM\s+/i, "");
-  const result = api.pages(query);
+  const { source, where } = splitQuery(config.query);
+  const result = api.pages(source);
   if (!result || !result.values) return [];
+
+  let whereFilter: ((item: any) => boolean) | null = null;
+  if (where) {
+    try {
+      whereFilter = parseWhere(where);
+    } catch (e) {
+      console.warn("Kanban: failed to parse WHERE expression:", e);
+    }
+  }
 
   const cards: KanbanCard[] = [];
   for (const page of result.values) {
     try {
-      cards.push(mapPageToCard(page, config.groupBy));
+      if (whereFilter && !whereFilter(page)) continue;
+      cards.push(mapPageToCard(page, config));
     } catch (e) {
       const path = page?.file?.path ?? "unknown";
       console.warn(`Kanban: skipping card with malformed frontmatter at ${path}:`, e);
@@ -79,7 +97,18 @@ export function fetchPages(api: DataviewApi, config: KanbanConfig): KanbanCard[]
   return cards;
 }
 
-export function mapTaskToCard(task: any, groupBy: string): KanbanCard {
+/**
+ * Resolve a value from inline field text match or Dataview task property.
+ * Inline fields take priority; Dataview properties are the fallback.
+ */
+function resolveField(match: RegExpMatchArray | null, taskProp: any): string | undefined {
+  if (match) return match[1].trim() || undefined;
+  if (taskProp != null && taskProp !== "") return String(taskProp);
+  return undefined;
+}
+
+export function mapTaskToCard(task: any, config: KanbanConfig): KanbanCard {
+  const groupBy = config.groupBy;
   const rawText: string = task.text ?? "";
   // Strip inline fields like [field:: value] from the display title
   const title = rawText.replace(/\[[\w-]+::[^\]]*\]/g, "").trim() || "Untitled";
@@ -93,22 +122,38 @@ export function mapTaskToCard(task: any, groupBy: string): KanbanCard {
   let status: string;
   if (match) {
     status = match[1].trim();
+  } else if (task[groupBy] != null && task[groupBy] !== "") {
+    // Fall back to Dataview task property
+    status = String(task[groupBy]);
   } else {
     // Fall back to completed status
     status = task.completed ? "done" : "";
   }
 
-  // Extract other inline fields
+  // Extract inline fields with Dataview property fallback
   const priorityMatch = rawText.match(/\[priority::\s*([^\]]*)\]/i);
   const dueMatch = rawText.match(/\[due::\s*([^\]]*)\]/i);
   const projectMatch = rawText.match(/\[project::\s*([^\]]*)\]/i);
   const tagsMatch = rawText.match(/\[tags::\s*([^\]]*)\]/i);
+
+  const priority = resolveField(priorityMatch, task.priority);
+  const due = resolveField(dueMatch, task.due);
+  const project = resolveField(projectMatch, task.project);
 
   const tags: string[] = [];
   if (tagsMatch) {
     for (const t of tagsMatch[1].split(",")) {
       const trimmed = t.trim();
       if (trimmed) tags.push(trimmed);
+    }
+  } else if (task.tags) {
+    // Dataview task tags fallback
+    const dvTags = task.tags.values ?? task.tags;
+    if (Array.isArray(dvTags)) {
+      for (const t of dvTags) {
+        const s = String(t).trim();
+        if (s && !tags.includes(s)) tags.push(s);
+      }
     }
   }
   // Also pick up #hashtags from the text
@@ -119,14 +164,21 @@ export function mapTaskToCard(task: any, groupBy: string): KanbanCard {
     }
   }
 
+  let createdAt: string | undefined;
+  if (config.createdField) {
+    const createdMatch = rawText.match(new RegExp(`\\[${config.createdField}::\\s*([^\\]]*)\\]`, "i"));
+    createdAt = resolveField(createdMatch, task[config.createdField]);
+  }
+
   return {
     id: `${filePath}:${lineNumber ?? 0}`,
     title,
     status,
-    priority: priorityMatch ? priorityMatch[1].trim() : undefined,
-    due: dueMatch ? dueMatch[1].trim() : undefined,
+    priority,
+    due,
     tags: tags.length > 0 ? tags : undefined,
-    project: projectMatch ? projectMatch[1].trim() : undefined,
+    project,
+    createdAt,
     filePath,
     lineNumber,
     cardType: "checkbox",
@@ -134,17 +186,28 @@ export function mapTaskToCard(task: any, groupBy: string): KanbanCard {
 }
 
 export function fetchTasks(api: DataviewApi, config: KanbanConfig): KanbanCard[] {
-  const query = config.query.replace(/^\s*FROM\s+/i, "");
-  const result = api.pages(query);
+  const { source, where } = splitQuery(config.query);
+  const result = api.pages(source);
   if (!result || !result.values) return [];
+
+  let whereFilter: ((item: any) => boolean) | null = null;
+  if (where) {
+    try {
+      whereFilter = parseWhere(where);
+    } catch (e) {
+      console.warn("Kanban: failed to parse WHERE expression:", e);
+    }
+  }
 
   const cards: KanbanCard[] = [];
   for (const page of result.values) {
+    // For tasks, WHERE applies at the page level
+    if (whereFilter && !whereFilter(page)) continue;
     const tasks = page?.file?.tasks?.values;
     if (!tasks) continue;
     for (const task of tasks) {
       try {
-        cards.push(mapTaskToCard(task, config.groupBy));
+        cards.push(mapTaskToCard(task, config));
       } catch (e) {
         const path = task?.path ?? "unknown";
         console.warn(`Kanban: skipping task at ${path}:${task?.line}:`, e);

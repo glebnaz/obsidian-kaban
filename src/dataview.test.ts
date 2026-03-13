@@ -68,7 +68,7 @@ describe("getDataviewApi", () => {
 describe("mapPageToCard", () => {
   it("should map a dataview page to KanbanCard", () => {
     const page = makePage();
-    const card = mapPageToCard(page, "status");
+    const card = mapPageToCard(page, makeConfig());
 
     expect(card).toEqual({
       id: "Tasks/my-task.md",
@@ -78,6 +78,7 @@ describe("mapPageToCard", () => {
       due: "2026-03-15",
       tags: ["#work"],
       project: "ProjectX",
+      createdAt: undefined,
       filePath: "Tasks/my-task.md",
       cardType: "file",
     });
@@ -85,7 +86,7 @@ describe("mapPageToCard", () => {
 
   it("should handle page with no tags", () => {
     const page = makePage({ file: { path: "a.md", name: "a", tags: { values: [] } } });
-    const card = mapPageToCard(page, "status");
+    const card = mapPageToCard(page, makeConfig());
     expect(card.tags).toBeUndefined();
   });
 
@@ -94,7 +95,7 @@ describe("mapPageToCard", () => {
       file: { path: "b.md", name: "b" },
       status: "Done",
     };
-    const card = mapPageToCard(page, "status");
+    const card = mapPageToCard(page, makeConfig());
     expect(card.priority).toBeUndefined();
     expect(card.due).toBeUndefined();
     expect(card.project).toBeUndefined();
@@ -103,7 +104,7 @@ describe("mapPageToCard", () => {
 
   it("should handle array-style tags", () => {
     const page = makePage({ tags: ["#a", "#b"], file: { path: "c.md", name: "c" } });
-    const card = mapPageToCard(page, "status");
+    const card = mapPageToCard(page, makeConfig());
     expect(card.tags).toEqual(["#a", "#b"]);
   });
 });

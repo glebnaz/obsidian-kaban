@@ -10,6 +10,7 @@ export interface KanbanConfig {
   hideFields?: string[];
   doneColumns: string[];
   showDone: boolean;
+  createdField?: string;
 }
 
 export interface ParseResult {
@@ -80,6 +81,7 @@ export function parseKanbanConfig(source: string): ParseOutcome {
     hideFields: raw["hide-fields"] ? splitCommaSeparated(raw["hide-fields"]) : undefined,
     doneColumns: raw["done-columns"] ? splitCommaSeparated(raw["done-columns"]) : [],
     showDone: raw["show-done"] !== "false",
+    createdField: raw["created-field"] || undefined,
   };
 
   if (config.columns.length === 0) {

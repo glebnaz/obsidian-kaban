@@ -92,7 +92,7 @@ describe("renderCard", () => {
 
     const dueEl = findByClassFirst(el, "kanban-card-due");
     expect(dueEl).toBeDefined();
-    expect(dueEl.text).toBe("2099-01-01");
+    expect(dueEl.text).toMatch(/^01-01-2099 \d{2}:\d{2}$/);
   });
 
   it("should add overdue class for past due dates", () => {

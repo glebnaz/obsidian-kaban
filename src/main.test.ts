@@ -49,14 +49,26 @@ describe("KanbanBoardPlugin", () => {
     expect(spy).toHaveBeenCalledWith("kanban", expect.any(Function));
   });
 
-  it("should register insert board command on load", async () => {
+  it("should register all commands on load", async () => {
     const plugin = new KanbanBoardPlugin({} as any, {} as any);
     const spy = jest.spyOn(plugin, "addCommand");
     await plugin.onload();
     expect(spy).toHaveBeenCalledWith(
       expect.objectContaining({
         id: "insert-kanban-board",
-        name: "Insert Board",
+        name: "Insert Page Board",
+      })
+    );
+    expect(spy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: "insert-kanban-task-board",
+        name: "Insert Task Board (all vault)",
+      })
+    );
+    expect(spy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: "refresh-kanban-boards",
+        name: "Refresh all boards",
       })
     );
   });
@@ -137,22 +149,42 @@ describe("KanbanBoardPlugin", () => {
     });
   });
 
-  describe("insert board command", () => {
-    it("should insert template code block at cursor", async () => {
+  describe("insert board commands", () => {
+    let commands: Record<string, any>;
+
+    beforeEach(async () => {
+      commands = {};
       const plugin = new KanbanBoardPlugin({} as any, {} as any);
-      let command: any;
       jest.spyOn(plugin, "addCommand").mockImplementation((cmd: any) => {
-        command = cmd;
+        commands[cmd.id] = cmd;
       });
       await plugin.onload();
+    });
 
+    it("should insert page board template at cursor", () => {
       const editor = { replaceSelection: jest.fn() };
-      command.editorCallback(editor);
+      commands["insert-kanban-board"].editorCallback(editor);
       const inserted = editor.replaceSelection.mock.calls[0][0];
       expect(inserted).toContain("```kanban");
       expect(inserted).toContain("query:");
       expect(inserted).toContain("columns:");
       expect(inserted).toContain("group-by:");
+      expect(inserted).not.toContain("source-type:");
+    });
+
+    it("should insert task board template at cursor", () => {
+      const editor = { replaceSelection: jest.fn() };
+      commands["insert-kanban-task-board"].editorCallback(editor);
+      const inserted = editor.replaceSelection.mock.calls[0][0];
+      expect(inserted).toContain("```kanban");
+      expect(inserted).toContain('query: FROM ""');
+      expect(inserted).toContain("source-type: tasks");
+      expect(inserted).toContain("done-columns: Done");
+    });
+
+    it("should trigger metadata change on refresh", () => {
+      commands["refresh-kanban-boards"].callback();
+      // Just verify it doesn't throw — actual trigger is on app.metadataCache
     });
   });
 });

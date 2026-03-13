@@ -6,10 +6,18 @@ import { initSortableOnColumns, destroySortables, generateBoardId, DragDropConte
 import { initCardActions, CardActionContext } from "./cardactions";
 import Sortable from "sortablejs";
 
-const TEMPLATE_BLOCK = `\`\`\`kanban
+const TEMPLATE_PAGE_BOARD = `\`\`\`kanban
 query: FROM "Tasks" WHERE status != "archive"
 columns: Backlog, In Progress, Done
 group-by: status
+\`\`\``;
+
+const TEMPLATE_TASK_BOARD = `\`\`\`kanban
+query: FROM ""
+columns: Backlog, In Progress, Done
+group-by: status
+source-type: tasks
+done-columns: Done
 \`\`\``;
 
 export default class KanbanBoardPlugin extends Plugin {
@@ -82,9 +90,26 @@ export default class KanbanBoardPlugin extends Plugin {
 
     this.addCommand({
       id: "insert-kanban-board",
-      name: "Insert Board",
+      name: "Insert Page Board",
       editorCallback: (editor: any) => {
-        editor.replaceSelection(TEMPLATE_BLOCK);
+        editor.replaceSelection(TEMPLATE_PAGE_BOARD);
+      },
+    });
+
+    this.addCommand({
+      id: "insert-kanban-task-board",
+      name: "Insert Task Board (all vault)",
+      editorCallback: (editor: any) => {
+        editor.replaceSelection(TEMPLATE_TASK_BOARD);
+      },
+    });
+
+    this.addCommand({
+      id: "refresh-kanban-boards",
+      name: "Refresh all boards",
+      callback: () => {
+        // Trigger metadata change event to force all boards to re-render
+        (this.app.metadataCache as any).trigger("dataview:metadata-change");
       },
     });
   }

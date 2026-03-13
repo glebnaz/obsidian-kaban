@@ -1,6 +1,17 @@
 import { KanbanColumn, KanbanCard } from "./dataview";
 import { KanbanConfig } from "./config";
 
+function formatDate(raw: string): string {
+  const d = new Date(raw);
+  if (isNaN(d.getTime())) return raw;
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  const hh = String(d.getHours()).padStart(2, "0");
+  const min = String(d.getMinutes()).padStart(2, "0");
+  return `${dd}-${mm}-${yyyy} ${hh}:${min}`;
+}
+
 function getDueDateClass(due: string): string {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -51,9 +62,16 @@ export function renderCard(el: HTMLElement, card: KanbanCard, config: KanbanConf
 
   if (card.due && !isFieldHidden("due", config)) {
     const dueCls = getDueDateClass(card.due);
-    const dueEl = meta.createEl("span", {
+    meta.createEl("span", {
       cls: "kanban-card-due" + (dueCls ? " " + dueCls : ""),
-      text: card.due,
+      text: formatDate(card.due),
+    });
+  }
+
+  if (card.createdAt && !isFieldHidden("created", config)) {
+    meta.createEl("span", {
+      cls: "kanban-card-created",
+      text: formatDate(card.createdAt),
     });
   }
 

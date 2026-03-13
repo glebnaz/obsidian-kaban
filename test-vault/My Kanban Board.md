@@ -1,11 +1,12 @@
 # My Kanban Board
 
 ```kanban
-query: FROM "Tasks"
-columns: todo,in-progress,bloked,done,wip
+query: FROM "Tasks" WHERE status != "archive"
+columns: todo, in-progress, bloked, wip, done
 group-by: status
 sort-by: priority
 done-columns: done
+created-field: created
 ```
 
 ## Notes
