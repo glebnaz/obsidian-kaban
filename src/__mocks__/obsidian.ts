@@ -31,6 +31,7 @@ export class Plugin extends Component {
   manifest: any = {};
   registerMarkdownCodeBlockProcessor(_lang: string, _handler: any) {}
   addCommand(_command: any) {}
+  addSettingTab(_tab: any) {}
   async loadData() {
     return {};
   }
@@ -55,6 +56,37 @@ export class TFile {
   path = "";
   basename = "";
   extension = "";
+}
+
+export class PluginSettingTab {
+  app: any;
+  plugin: any;
+  containerEl: any = createMockEl();
+  constructor(app: any, plugin: any) {
+    this.app = app;
+    this.plugin = plugin;
+  }
+  display() {}
+}
+
+export class Setting {
+  constructor(_containerEl: any) {}
+  setName(_name: string) { return this; }
+  setDesc(_desc: string) { return this; }
+  addText(_cb: any) { return this; }
+  addTextArea(_cb: any) { return this; }
+}
+
+export class Modal {
+  app: any;
+  contentEl: any = createMockEl();
+  constructor(app: any) {
+    this.app = app;
+  }
+  open() {}
+  close() {}
+  onOpen() {}
+  onClose() {}
 }
 
 export type App = any;
