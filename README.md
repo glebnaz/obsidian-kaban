@@ -102,6 +102,7 @@ The template is read as raw text. If [Templater](https://github.com/SilentVoid13
 | `source-type` | no | `pages` (default) or `tasks` |
 | `sort-by` | no | Field to sort cards within columns |
 | `filter-tags` | no | Comma-separated tags to filter cards |
+| `show-fields` | no | Only show these fields on cards (including custom frontmatter fields) |
 | `hide-fields` | no | Fields to hide: `project`, `due`, `priority`, `tags`, `checkbox`, `created` |
 | `done-columns` | no | Columns treated as "done" (green styling, auto-check) |
 | `show-done` | no | `true` (default) / `false` — hide done columns entirely |
@@ -241,6 +242,22 @@ sort-by: priority
 done-columns: done
 ```
 ````
+</details>
+
+<details>
+<summary><strong>Custom frontmatter fields with show-fields</strong></summary>
+
+````markdown
+```kanban
+query: FROM "Tasks" WHERE status != "archive"
+columns: todo, in-progress, done
+group-by: status
+show-fields: priority, due, assignee, sprint
+done-columns: done
+```
+````
+
+Shows only `priority`, `due`, and custom fields `assignee`, `sprint` from frontmatter. All other fields are hidden.
 </details>
 
 ---

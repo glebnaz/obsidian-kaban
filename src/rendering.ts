@@ -24,8 +24,14 @@ function getDueDateClass(due: string): string {
   return "";
 }
 
-function isFieldHidden(field: string, config: KanbanConfig): boolean {
-  return config.hideFields != null && config.hideFields.includes(field);
+function isFieldVisible(field: string, config: KanbanConfig): boolean {
+  if (config.showFields) {
+    return config.showFields.includes(field);
+  }
+  if (config.hideFields) {
+    return !config.hideFields.includes(field);
+  }
+  return true;
 }
 
 function filterDoneCards(columns: KanbanColumn[], config: KanbanConfig): KanbanColumn[] {
@@ -46,7 +52,7 @@ export function renderCard(el: HTMLElement, card: KanbanCard, config: KanbanConf
 
   const titleRow = cardEl.createEl("div", { cls: "kanban-card-header" });
 
-  if (!isFieldHidden("checkbox", config)) {
+  if (isFieldVisible("checkbox", config)) {
     const isDone = config.doneColumns.some((dc) => dc.toLowerCase() === card.status.toLowerCase());
     const cb = titleRow.createEl("input", { type: "checkbox" } as any);
     if (isDone) (cb as HTMLInputElement).checked = true;
@@ -56,11 +62,11 @@ export function renderCard(el: HTMLElement, card: KanbanCard, config: KanbanConf
 
   const meta = cardEl.createEl("div", { cls: "kanban-card-meta" });
 
-  if (card.project && !isFieldHidden("project", config)) {
+  if (card.project && isFieldVisible("project", config)) {
     meta.createEl("span", { cls: "kanban-card-project", text: card.project });
   }
 
-  if (card.due && !isFieldHidden("due", config)) {
+  if (card.due && isFieldVisible("due", config)) {
     const dueCls = getDueDateClass(card.due);
     meta.createEl("span", {
       cls: "kanban-card-due" + (dueCls ? " " + dueCls : ""),
@@ -68,21 +74,32 @@ export function renderCard(el: HTMLElement, card: KanbanCard, config: KanbanConf
     });
   }
 
-  if (card.createdAt && !isFieldHidden("created", config)) {
+  if (card.createdAt && isFieldVisible("created", config)) {
     meta.createEl("span", {
       cls: "kanban-card-created",
       text: formatDate(card.createdAt),
     });
   }
 
-  if (card.priority && !isFieldHidden("priority", config)) {
+  if (card.priority && isFieldVisible("priority", config)) {
     meta.createEl("span", { cls: "kanban-card-priority", text: card.priority });
   }
 
-  if (card.tags && card.tags.length > 0 && !isFieldHidden("tags", config)) {
+  if (card.tags && card.tags.length > 0 && isFieldVisible("tags", config)) {
     const tagsEl = meta.createEl("span", { cls: "kanban-card-tags" });
     for (const tag of card.tags) {
       tagsEl.createEl("span", { cls: "kanban-card-tag", text: tag });
+    }
+  }
+
+  if (card.customFields) {
+    for (const [field, value] of Object.entries(card.customFields)) {
+      if (isFieldVisible(field, config)) {
+        meta.createEl("span", {
+          cls: "kanban-card-custom-field",
+          text: `${field}: ${value}`,
+        });
+      }
     }
   }
 }

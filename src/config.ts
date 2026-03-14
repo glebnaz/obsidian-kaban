@@ -8,6 +8,7 @@ export interface KanbanConfig {
   sortBy?: string;
   filterTags?: string[];
   hideFields?: string[];
+  showFields?: string[];
   doneColumns: string[];
   showDone: boolean;
   createdField?: string;
@@ -80,6 +81,7 @@ export function parseKanbanConfig(source: string): ParseOutcome {
     sortBy: raw["sort-by"] || undefined,
     filterTags: raw["filter-tags"] ? splitCommaSeparated(raw["filter-tags"]) : undefined,
     hideFields: raw["hide-fields"] ? splitCommaSeparated(raw["hide-fields"]) : undefined,
+    showFields: raw["show-fields"] ? splitCommaSeparated(raw["show-fields"]) : undefined,
     doneColumns: raw["done-columns"] ? splitCommaSeparated(raw["done-columns"]) : [],
     showDone: raw["show-done"] !== "false",
     createdField: raw["created-field"] || undefined,

@@ -14,6 +14,7 @@ export interface KanbanCard {
   filePath: string;
   lineNumber?: number;
   cardType: "file" | "checkbox";
+  customFields?: Record<string, string>;
 }
 
 export interface KanbanColumn {
@@ -56,6 +57,22 @@ export function mapPageToCard(page: any, config: KanbanConfig): KanbanCard {
     if (val != null) createdAt = String(val);
   }
 
+  const builtInFields = new Set(["priority", "due", "tags", "project", "status", config.groupBy]);
+  if (config.createdField) builtInFields.add(config.createdField);
+
+  let customFields: Record<string, string> | undefined;
+  if (config.showFields) {
+    customFields = {};
+    for (const field of config.showFields) {
+      if (builtInFields.has(field)) continue;
+      const val = page[field];
+      if (val != null) {
+        customFields[field] = String(val);
+      }
+    }
+    if (Object.keys(customFields).length === 0) customFields = undefined;
+  }
+
   return {
     id: filePath,
     title,
@@ -67,6 +84,7 @@ export function mapPageToCard(page: any, config: KanbanConfig): KanbanCard {
     createdAt,
     filePath,
     cardType: "file",
+    customFields,
   };
 }
 
