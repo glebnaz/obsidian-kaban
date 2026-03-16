@@ -550,18 +550,19 @@ function evaluateFunction(name: string, args: ASTNode[], ctx: any): any {
         s = String(arg).toLowerCase();
       }
       if (s === "today") {
-        return Date.UTC(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
+        const d = new Date();
+        return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
       }
       if (s === "now") {
         return Date.now();
       }
       if (s === "tomorrow") {
         const d = new Date();
-        return Date.UTC(d.getFullYear(), d.getMonth(), d.getDate() + 1);
+        return new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1).getTime();
       }
       if (s === "yesterday") {
         const d = new Date();
-        return Date.UTC(d.getFullYear(), d.getMonth(), d.getDate() - 1);
+        return new Date(d.getFullYear(), d.getMonth(), d.getDate() - 1).getTime();
       }
       // Parse date string
       const d = new Date(s);
