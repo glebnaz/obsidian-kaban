@@ -1,6 +1,6 @@
 import { App, Component } from "obsidian";
 import { KanbanConfig } from "./config";
-import { splitQuery, parseWhere } from "./where";
+import { splitQuery } from "./where";
 
 export interface KanbanCard {
   id: string;
@@ -25,6 +25,7 @@ export interface KanbanColumn {
 
 export interface DataviewApi {
   pages(query: string): any;
+  evaluate(expression: string, context?: any, originFile?: string): { successful: boolean; value: any };
 }
 
 export function getDataviewApi(app: App): DataviewApi | null {
@@ -93,19 +94,13 @@ export function fetchPages(api: DataviewApi, config: KanbanConfig): KanbanCard[]
   const result = api.pages(source);
   if (!result || !result.values) return [];
 
-  let whereFilter: ((item: any) => boolean) | null = null;
-  if (where) {
-    try {
-      whereFilter = parseWhere(where);
-    } catch (e) {
-      console.warn("Kanban: failed to parse WHERE expression:", e);
-    }
-  }
-
   const cards: KanbanCard[] = [];
   for (const page of result.values) {
     try {
-      if (whereFilter && !whereFilter(page)) continue;
+      if (where) {
+        const res = api.evaluate(where, page);
+        if (!res.successful || !res.value) continue;
+      }
       cards.push(mapPageToCard(page, config));
     } catch (e) {
       const path = page?.file?.path ?? "unknown";
@@ -208,19 +203,17 @@ export function fetchTasks(api: DataviewApi, config: KanbanConfig): KanbanCard[]
   const result = api.pages(source);
   if (!result || !result.values) return [];
 
-  let whereFilter: ((item: any) => boolean) | null = null;
-  if (where) {
-    try {
-      whereFilter = parseWhere(where);
-    } catch (e) {
-      console.warn("Kanban: failed to parse WHERE expression:", e);
-    }
-  }
-
   const cards: KanbanCard[] = [];
   for (const page of result.values) {
-    // For tasks, WHERE applies at the page level
-    if (whereFilter && !whereFilter(page)) continue;
+    if (where) {
+      try {
+        const res = api.evaluate(where, page);
+        if (!res.successful || !res.value) continue;
+      } catch (e) {
+        console.warn("Kanban: failed to evaluate WHERE for page:", e);
+        continue;
+      }
+    }
     const tasks = page?.file?.tasks?.values;
     if (!tasks) continue;
     for (const task of tasks) {
