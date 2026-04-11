@@ -10,6 +10,7 @@ function makeConfig(overrides?: Partial<KanbanConfig>): KanbanConfig {
     columns: ["Backlog", "In Progress", "Done"],
     groupBy: "status",
     doneColumns: [],
+    activeColumns: [],
     showDone: true,
     ...overrides,
   };

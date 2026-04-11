@@ -6,3 +6,4 @@ dist/
 
 # ralphex progress logs
 progress*.txt
+/.obsidian/

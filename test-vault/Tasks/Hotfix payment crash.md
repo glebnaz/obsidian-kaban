@@ -9,6 +9,8 @@ tags:
 project: Backend
 eisenhower: important-urgent
 created: 2026-03-12
+start-date: 2026-03-12
+end-date: 2026-03-13
 ---
 
 Payment processing crashes on amounts > $10,000 due to integer overflow. Critical fix needed.

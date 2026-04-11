@@ -6,6 +6,7 @@ columns: todo, in-progress, bloked, wip, done
 group-by: status
 sort-by: priority
 done-columns: done
+active-columns: in-progress, wip
 created-field: created
 ```
 

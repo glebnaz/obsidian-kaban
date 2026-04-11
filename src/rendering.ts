@@ -106,8 +106,10 @@ export function renderCard(el: HTMLElement, card: KanbanCard, config: KanbanConf
 
 export function renderColumn(el: HTMLElement, column: KanbanColumn, config: KanbanConfig): void {
   const isDone = config.doneColumns.some((dc) => dc.toLowerCase() === column.id.toLowerCase());
+  const isActive = config.activeColumns.some((ac) => ac.toLowerCase() === column.id.toLowerCase());
   const colEl = el.createEl("div", { cls: "kanban-column" });
   if (isDone) colEl.classList.add("kanban-column-done");
+  if (isActive && !isDone) colEl.classList.add("kanban-column-active");
   colEl.dataset.columnId = column.id;
 
   const header = colEl.createEl("div", { cls: "kanban-column-header" });

@@ -3,7 +3,9 @@ function createMockEl(): any {
     children: [] as any[],
     cls: "",
     text: "",
+    title: "",
     dataset: {} as Record<string, string>,
+    style: {} as Record<string, string>,
     createEl(_tag: string, opts?: any) {
       const child = createMockEl();
       if (opts?.cls) child.cls = opts.cls;
@@ -14,6 +16,9 @@ function createMockEl(): any {
     },
     empty() {
       el.children = [];
+    },
+    querySelectorAll(_selector: string) {
+      return [];
     },
   };
   return el;

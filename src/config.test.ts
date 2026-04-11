@@ -20,6 +20,7 @@ describe("parseKanbanConfig", () => {
       filterTags: undefined,
       hideFields: undefined,
       doneColumns: [],
+      activeColumns: [],
       showDone: true,
     });
   });

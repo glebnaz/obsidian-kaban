@@ -1,10 +1,13 @@
-import { Plugin, MarkdownRenderChild, Notice } from "obsidian";
+import { Plugin, MarkdownRenderChild, Notice, App } from "obsidian";
 import { parseKanbanConfig } from "./config";
 import { getDataviewApi, loadBoard, subscribeToMetadataChange } from "./dataview";
 import { renderBoard } from "./rendering";
 import { initSortableOnColumns, destroySortables, generateBoardId, DragDropContext, DragState } from "./dragdrop";
-import { initCardActions, CardActionContext } from "./cardactions";
+import { initCardActions, CardActionContext, openFile } from "./cardactions";
 import { KanbanPluginSettings, DEFAULT_SETTINGS, KanbanSettingTab } from "./settings";
+import { parseTimelineConfig } from "./timeline-config";
+import { loadTimeline } from "./timeline";
+import { renderTimeline } from "./timeline-rendering";
 import Sortable from "sortablejs";
 
 const TEMPLATE_PAGE_BOARD = `\`\`\`kanban
@@ -19,6 +22,14 @@ columns: Backlog, In Progress, Done
 group-by: status
 source-type: tasks
 done-columns: Done
+\`\`\``;
+
+const TEMPLATE_TIMELINE = `\`\`\`timeline
+query: FROM "Tasks" WHERE status != "archive"
+group-by: status
+start-date-field: start-date
+end-date-field: end-date
+done-columns: done
 \`\`\``;
 
 export default class KanbanBoardPlugin extends Plugin {
@@ -94,6 +105,48 @@ export default class KanbanBoardPlugin extends Plugin {
       });
     });
 
+    this.registerMarkdownCodeBlockProcessor("timeline", (source, el, ctx) => {
+      const result = parseTimelineConfig(source);
+
+      if (!result.ok) {
+        const errorDiv = el.createEl("div", { cls: "timeline-error" });
+        errorDiv.createEl("strong", { text: "Timeline configuration error:" });
+        const list = errorDiv.createEl("ul");
+        for (const err of result.errors) {
+          list.createEl("li", { text: err });
+        }
+        return;
+      }
+
+      const config = result.config;
+      const api = getDataviewApi(this.app);
+
+      if (!api) {
+        const errorDiv = el.createEl("div", { cls: "timeline-error" });
+        errorDiv.createEl("strong", {
+          text: "Dataview plugin is required but not installed or enabled.",
+        });
+        errorDiv.createEl("p", {
+          text: "Please install and enable the Dataview community plugin to use Timeline views.",
+        });
+        return;
+      }
+
+      const data = loadTimeline(api, config);
+      renderTimeline(el, data, config);
+      initTimelineActions(el, this.app);
+
+      const child = new MarkdownRenderChild(el);
+      ctx.addChild(child);
+
+      subscribeToMetadataChange(this.app, child, () => {
+        el.empty();
+        const newData = loadTimeline(api, config);
+        renderTimeline(el, newData, config);
+        initTimelineActions(el, this.app);
+      });
+    });
+
     this.addCommand({
       id: "insert-kanban-board",
       name: "Insert Page Board",
@@ -107,6 +160,14 @@ export default class KanbanBoardPlugin extends Plugin {
       name: "Insert Task Board (all vault)",
       editorCallback: (editor: any) => {
         editor.replaceSelection(TEMPLATE_TASK_BOARD);
+      },
+    });
+
+    this.addCommand({
+      id: "insert-timeline",
+      name: "Insert Timeline View",
+      editorCallback: (editor: any) => {
+        editor.replaceSelection(TEMPLATE_TIMELINE);
       },
     });
 
@@ -186,6 +247,19 @@ export default class KanbanBoardPlugin extends Plugin {
     await this.app.workspace.getLeaf().openFile(file);
     new Notice(`Task "${taskName}" created.`);
   }
+}
+
+function initTimelineActions(el: HTMLElement, app: App): void {
+  const titleEls = el.querySelectorAll(".timeline-task-title");
+  titleEls.forEach((titleEl: Element) => {
+    (titleEl as HTMLElement).addEventListener("click", () => {
+      const row = (titleEl as HTMLElement).closest("[data-file-path]") as HTMLElement | null;
+      if (!row) return;
+      const filePath = row.dataset.filePath;
+      if (!filePath) return;
+      openFile(app, filePath);
+    });
+  });
 }
 
 function promptForTaskName(app: any): Promise<string | null> {

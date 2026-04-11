@@ -2,6 +2,11 @@ import { App, Component } from "obsidian";
 import { KanbanConfig } from "./config";
 import { splitQuery } from "./where";
 
+export interface DateFieldOpts {
+  startDateField?: string;
+  endDateField?: string;
+}
+
 export interface KanbanCard {
   id: string;
   title: string;
@@ -11,6 +16,8 @@ export interface KanbanCard {
   tags?: string[];
   project?: string;
   createdAt?: string;
+  startDate?: string;
+  endDate?: string;
   filePath: string;
   lineNumber?: number;
   cardType: "file" | "checkbox";
@@ -33,7 +40,7 @@ export function getDataviewApi(app: App): DataviewApi | null {
   return dv ?? null;
 }
 
-export function mapPageToCard(page: any, config: KanbanConfig): KanbanCard {
+export function mapPageToCard(page: any, config: KanbanConfig, opts?: DateFieldOpts): KanbanCard {
   const filePath = page.file?.path ?? "";
   const title = page.file?.name ?? "Untitled";
   const status = String(page[config.groupBy] ?? "");
@@ -74,6 +81,18 @@ export function mapPageToCard(page: any, config: KanbanConfig): KanbanCard {
     if (Object.keys(customFields).length === 0) customFields = undefined;
   }
 
+  let startDate: string | undefined;
+  if (opts?.startDateField) {
+    const val = page[opts.startDateField] ?? page.file?.[opts.startDateField];
+    if (val != null) startDate = String(val);
+  }
+
+  let endDate: string | undefined;
+  if (opts?.endDateField) {
+    const val = page[opts.endDateField] ?? page.file?.[opts.endDateField];
+    if (val != null) endDate = String(val);
+  }
+
   return {
     id: filePath,
     title,
@@ -83,13 +102,15 @@ export function mapPageToCard(page: any, config: KanbanConfig): KanbanCard {
     tags: rawTags.length > 0 ? rawTags : undefined,
     project: page.project != null ? String(page.project) : undefined,
     createdAt,
+    startDate,
+    endDate,
     filePath,
     cardType: "file",
     customFields,
   };
 }
 
-export function fetchPages(api: DataviewApi, config: KanbanConfig): KanbanCard[] {
+export function fetchPages(api: DataviewApi, config: KanbanConfig, opts?: DateFieldOpts): KanbanCard[] {
   const { source, where } = splitQuery(config.query);
   const result = api.pages(source);
   if (!result || !result.values) return [];
@@ -101,7 +122,7 @@ export function fetchPages(api: DataviewApi, config: KanbanConfig): KanbanCard[]
         const res = api.evaluate(where, page);
         if (!res.successful || !res.value) continue;
       }
-      cards.push(mapPageToCard(page, config));
+      cards.push(mapPageToCard(page, config, opts));
     } catch (e) {
       const path = page?.file?.path ?? "unknown";
       console.warn(`Kanban: skipping card with malformed frontmatter at ${path}:`, e);
@@ -120,7 +141,7 @@ function resolveField(match: RegExpMatchArray | null, taskProp: any): string | u
   return undefined;
 }
 
-export function mapTaskToCard(task: any, config: KanbanConfig): KanbanCard {
+export function mapTaskToCard(task: any, config: KanbanConfig, opts?: DateFieldOpts): KanbanCard {
   const groupBy = config.groupBy;
   const rawText: string = task.text ?? "";
   // Strip inline fields like [field:: value] from the display title
@@ -183,6 +204,18 @@ export function mapTaskToCard(task: any, config: KanbanConfig): KanbanCard {
     createdAt = resolveField(createdMatch, task[config.createdField]);
   }
 
+  let startDate: string | undefined;
+  if (opts?.startDateField) {
+    const m = rawText.match(new RegExp(`\\[${opts.startDateField}::\\s*([^\\]]*)\\]`, "i"));
+    startDate = resolveField(m, task[opts.startDateField]);
+  }
+
+  let endDate: string | undefined;
+  if (opts?.endDateField) {
+    const m = rawText.match(new RegExp(`\\[${opts.endDateField}::\\s*([^\\]]*)\\]`, "i"));
+    endDate = resolveField(m, task[opts.endDateField]);
+  }
+
   return {
     id: `${filePath}:${lineNumber ?? 0}`,
     title,
@@ -192,13 +225,15 @@ export function mapTaskToCard(task: any, config: KanbanConfig): KanbanCard {
     tags: tags.length > 0 ? tags : undefined,
     project,
     createdAt,
+    startDate,
+    endDate,
     filePath,
     lineNumber,
     cardType: "checkbox",
   };
 }
 
-export function fetchTasks(api: DataviewApi, config: KanbanConfig): KanbanCard[] {
+export function fetchTasks(api: DataviewApi, config: KanbanConfig, opts?: DateFieldOpts): KanbanCard[] {
   const { source, where } = splitQuery(config.query);
   const result = api.pages(source);
   if (!result || !result.values) return [];
@@ -218,7 +253,7 @@ export function fetchTasks(api: DataviewApi, config: KanbanConfig): KanbanCard[]
     if (!tasks) continue;
     for (const task of tasks) {
       try {
-        cards.push(mapTaskToCard(task, config));
+        cards.push(mapTaskToCard(task, config, opts));
       } catch (e) {
         const path = task?.path ?? "unknown";
         console.warn(`Kanban: skipping task at ${path}:${task?.line}:`, e);

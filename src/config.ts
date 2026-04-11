@@ -10,6 +10,7 @@ export interface KanbanConfig {
   hideFields?: string[];
   showFields?: string[];
   doneColumns: string[];
+  activeColumns: string[];
   showDone: boolean;
   createdField?: string;
   completedField?: string;
@@ -29,14 +30,14 @@ export type ParseOutcome = ParseResult | ParseError;
 
 const REQUIRED_FIELDS = ["query", "columns", "group-by"] as const;
 
-function splitCommaSeparated(value: string): string[] {
+export function splitCommaSeparated(value: string): string[] {
   return value
     .split(",")
     .map((s) => s.trim())
     .filter((s) => s.length > 0);
 }
 
-export function parseKanbanConfig(source: string): ParseOutcome {
+export function parseRawLines(source: string): Record<string, string> {
   const lines = source.split("\n");
   const raw: Record<string, string> = {};
 
@@ -53,6 +54,12 @@ export function parseKanbanConfig(source: string): ParseOutcome {
       raw[key] = value;
     }
   }
+
+  return raw;
+}
+
+export function parseKanbanConfig(source: string): ParseOutcome {
+  const raw = parseRawLines(source);
 
   const errors: string[] = [];
   for (const field of REQUIRED_FIELDS) {
@@ -83,6 +90,7 @@ export function parseKanbanConfig(source: string): ParseOutcome {
     hideFields: raw["hide-fields"] ? splitCommaSeparated(raw["hide-fields"]) : undefined,
     showFields: raw["show-fields"] ? splitCommaSeparated(raw["show-fields"]) : undefined,
     doneColumns: raw["done-columns"] ? splitCommaSeparated(raw["done-columns"]) : [],
+    activeColumns: raw["active-columns"] ? splitCommaSeparated(raw["active-columns"]) : [],
     showDone: raw["show-done"] !== "false",
     createdField: raw["created-field"] || undefined,
     completedField: raw["completed-field"] || undefined,

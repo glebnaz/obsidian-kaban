@@ -25,6 +25,19 @@ jest.mock("./dragdrop", () => ({
 
 jest.mock("./cardactions", () => ({
   initCardActions: jest.fn(),
+  openFile: jest.fn(),
+}));
+
+jest.mock("./timeline-config", () => ({
+  parseTimelineConfig: jest.fn().mockReturnValue({ ok: false, errors: ["mock"] }),
+}));
+
+jest.mock("./timeline", () => ({
+  loadTimeline: jest.fn().mockReturnValue({ items: [], noDateItems: [], rangeStart: new Date(), rangeEnd: new Date() }),
+}));
+
+jest.mock("./timeline-rendering", () => ({
+  renderTimeline: jest.fn(),
 }));
 
 jest.mock("sortablejs", () => ({
@@ -42,11 +55,12 @@ describe("KanbanBoardPlugin", () => {
     expect(plugin).toBeInstanceOf(KanbanBoardPlugin);
   });
 
-  it("should register kanban code block processor on load", async () => {
+  it("should register kanban and timeline code block processors on load", async () => {
     const plugin = new KanbanBoardPlugin({} as any, {} as any);
     const spy = jest.spyOn(plugin, "registerMarkdownCodeBlockProcessor");
     await plugin.onload();
     expect(spy).toHaveBeenCalledWith("kanban", expect.any(Function));
+    expect(spy).toHaveBeenCalledWith("timeline", expect.any(Function));
   });
 
   it("should register all commands on load", async () => {
@@ -71,6 +85,12 @@ describe("KanbanBoardPlugin", () => {
         name: "Refresh all boards",
       })
     );
+    expect(spy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: "insert-timeline",
+        name: "Insert Timeline View",
+      })
+    );
   });
 
   describe("code block handler", () => {
@@ -81,8 +101,8 @@ describe("KanbanBoardPlugin", () => {
       plugin = new KanbanBoardPlugin({} as any, {} as any);
       jest
         .spyOn(plugin, "registerMarkdownCodeBlockProcessor")
-        .mockImplementation((_lang: string, h: any) => {
-          handler = h;
+        .mockImplementation((lang: string, h: any) => {
+          if (lang === "kanban") handler = h;
         });
       await plugin.onload();
       jest.clearAllMocks();
@@ -180,6 +200,16 @@ describe("KanbanBoardPlugin", () => {
       expect(inserted).toContain('query: FROM ""');
       expect(inserted).toContain("source-type: tasks");
       expect(inserted).toContain("done-columns: Done");
+    });
+
+    it("should insert timeline template at cursor", () => {
+      const editor = { replaceSelection: jest.fn() };
+      commands["insert-timeline"].editorCallback(editor);
+      const inserted = editor.replaceSelection.mock.calls[0][0];
+      expect(inserted).toContain("```timeline");
+      expect(inserted).toContain("start-date-field:");
+      expect(inserted).toContain("end-date-field:");
+      expect(inserted).toContain("group-by:");
     });
 
     it("should trigger metadata change on refresh", () => {
