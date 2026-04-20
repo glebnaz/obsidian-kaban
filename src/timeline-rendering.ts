@@ -186,8 +186,8 @@ export function renderTimeline(
     const todayOffset = daysBetween(data.rangeStart, new Date());
     if (todayOffset >= 0 && todayOffset <= totalDays) {
       const todayLine = body.createEl("div", { cls: "timeline-today-line" });
-      const leftPercent = (todayOffset / totalDays) * 100;
-      todayLine.style.left = `${leftPercent}%`;
+      const fraction = todayOffset / totalDays;
+      todayLine.style.left = `calc(${LABEL_WIDTH}px + (100% - ${LABEL_WIDTH}px) * ${fraction})`;
     }
   }
 
